@@ -497,3 +497,19 @@ h1 em, h2 em { font-family: var(--serif); font-weight: 500; }
   .shipping-form > div { grid-template-columns: 1fr; }
   .shipping-form .button { width: 100%; }
 }
+
+@media (max-width: 600px) {
+  .campaign-carousel { padding-top: 0; }
+  .campaign-slide { gap: 0; padding-block: 0 20px; align-content: start; }
+  .campaign-slide:not(:first-child) .hero-copy::before { display: none; }
+  .hero-visual { order: 1; height: clamp(390px, 54svh, 500px); min-height: 0; border-radius: 0 0 38px 38px; }
+  .hero-copy { position: relative; z-index: 1; order: 2; width: calc(100% - 28px); margin: -26px auto 0; padding: 18px 17px 0; border-radius: 22px 22px 0 0; background: var(--paper); }
+  .hero-copy .eyebrow { margin-bottom: 7px; font-size: 9px; }
+  .hero-copy h1, .hero-copy .campaign-title { max-width: 100%; margin-bottom: 9px; font-size: clamp(29px, 7.8vw, 36px); line-height: 1.1; }
+  .hero-copy .hero-text { max-width: 100%; margin-bottom: 14px; font-size: 12px; line-height: 1.5; }
+  .hero-actions { gap: 0; }
+  .hero-actions .button { min-height: 42px; }
+  .hero-actions .text-link { display: none; }
+  .carousel-peek { top: clamp(195px, 27svh, 250px); }
+  .campaign-carousel__controls { width: calc(100% - 62px); margin: 0 auto 22px; }
+}
