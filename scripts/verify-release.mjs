@@ -11,6 +11,8 @@ const files = {
   client: new URL("dist/supabase-client.js", root),
   adminApp: new URL("dist/admin-app.js", root),
   migration: new URL("supabase/migrations/20261010193000_catalog_admin_foundation.sql", root),
+  orderMigration: new URL("supabase/migrations/20261010220000_light_orders.sql", root),
+  createOrder: new URL("supabase/functions/create-order/index.ts", root),
 };
 
 const source = Object.fromEntries(
@@ -33,6 +35,13 @@ const checks = [
   ["Estoque baixo e esgotado recebem tratamento operacional", source.admin.includes('value="low-stock"') && source.adminApp.includes("inventoryState") && source.storefrontApp.includes("stock-note--low")],
   ["O banco protege produtos publicados por categoria visível", source.migration.includes("category.visible = true")],
   ["O bucket de imagens exige conta administrativa para escrita", source.migration.includes("Admins upload catalog media") && source.migration.includes("public.is_light_admin()")],
+  ["Pedidos são gravados somente por função segura e lidos por admins", source.orderMigration.includes("Admins can view Light orders") && source.orderMigration.includes("revoke all on public.light_orders from anon, authenticated") && source.createOrder.includes("SUPABASE_SERVICE_ROLE_KEY")],
+  ["Pedidos pendentes expiram e têm dados pessoais removidos automaticamente", source.orderMigration.includes("expires_at timestamptz not null default (now() + interval '7 days')") && source.orderMigration.includes("interval '30 days'") && source.orderMigration.includes("cron.schedule('light-orders-retention'") && source.orderMigration.includes("personal_data_deleted_at")],
+  ["Criação de pedidos tem limite por IP com identificador protegido e temporário", source.orderMigration.includes("extensions.hmac") && source.orderMigration.includes("consume_light_order_rate_limit") && source.orderMigration.includes("interval '24 hours'") && source.createOrder.includes('request.headers.get("x-real-ip")') && source.createOrder.includes('"retry-after": "3600"')],
+  ["Pedido valida preço, estoque e frete no servidor", source.createOrder.includes("catalog_products") && source.createOrder.includes("selectedQuote") && source.createOrder.includes("SUPERFRETE_TOKEN")],
+  ["Checkout cria somente pedidos pendentes, sem pagamento ou cartão", source.storefrontApp.includes("createPendingOrder") && source.storefrontApp.includes("pending_payment") === false && source.storefront.includes("aguardando pagamento") && !source.storefront.includes("type=\"credit-card\"")],
+  ["Admin lista e cancela apenas pedidos aguardando pagamento", source.admin.includes("admin-orders") && source.adminApp.includes("light_orders") && source.adminApp.includes("cancel_pending_light_order")],
+  ["Admin trata pedidos expirados e dados pessoais removidos", source.admin.includes('value="expired"') && source.adminApp.includes('status === "expired"') && source.adminApp.includes("personal_data_deleted_at")],
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

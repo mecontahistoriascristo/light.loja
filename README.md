@@ -58,8 +58,24 @@ A interface de frete já está pronta, mas não deve receber o token diretamente
 
 Depois, abra o carrinho, escolha **Continuar para entrega** e consulte um CEP. A SuperFrete retorna somente as modalidades habilitadas e atendidas para a origem e o destino; a loja não chama os Correios nem outra transportadora diretamente.
 
+## Pedidos de demonstração aguardando pagamento
+
+A jornada de checkout pode registrar um pedido pendente sem iniciar cobrança nem pedir dados de cartão. Os preços e o estoque são conferidos no catálogo do Supabase e o frete é confirmado novamente pela Edge Function antes da gravação. O admin mostra os pedidos e pode cancelá-los; ele não pode marcar pagamentos manualmente.
+
+Para ativar este fluxo, execute `supabase/migrations/20261010220000_light_orders.sql` no SQL Editor do mesmo projeto Supabase e publique `create-order`:
+
+```bash
+supabase functions deploy create-order --no-verify-jwt
+```
+
+A função usa `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPERFRETE_TOKEN` e `SUPERFRETE_ORIGIN_POSTAL_CODE` somente no ambiente seguro das Edge Functions. Configure `ALLOWED_ORIGIN=https://lightloja.vercel.app` nos Secrets da função antes de publicá-la; para desenvolvimento local, use a origem local autorizada somente durante o teste. Nunca copie os segredos para `dist/runtime-config.js`.
+
+Nome, contato e endereço são armazenados no pedido no Supabase. A política de RLS permite leitura somente a administradores Light. Pedidos sem pagamento expiram após 7 dias; dados de contato e entrega são removidos 30 dias depois do cancelamento ou da expiração, mantendo apenas o registro comercial sem identificação direta. O Supabase Cron executa essa manutenção a cada 15 minutos. O endpoint limita a criação a 5 pedidos por endereço IP por hora; o identificador usado é um HMAC com chave gerada e guardada no próprio banco, e os registros de limite são removidos em 24 horas.
+
+Pedidos aguardando pagamento não reservam estoque. Uma futura integração deve confirmar o pagamento por notificação assinada pelo servidor antes de mudar o estado ou iniciar a produção. A política de retenção segue a finalidade de pedidos de demonstração; prazos e obrigações podem mudar quando a loja passar a receber pedidos e pagamentos reais.
+
 ## Próxima fatia
 
-1. Aplicar a migração e ativar o login administrativo no Supabase.
-2. Conectar carrinho, estoque e pedidos ao Supabase.
-3. Integrar pagamento, persistência de pedidos, emissão de etiquetas e e-mails transacionais.
+1. Revisar e ativar a migração de pedidos e publicar a Edge Function `create-order`.
+2. Integrar um provedor de pagamento seguro antes de aceitar pagamentos reais.
+3. Revisar a política de retenção e notificações transacionais quando a operação real e as obrigações legais estiverem definidas.

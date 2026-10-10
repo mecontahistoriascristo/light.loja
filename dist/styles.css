@@ -363,6 +363,15 @@ h1 em, h2 em { font-family: var(--serif); font-weight: 500; }
 .checkout-message { min-height: 16px; margin: -5px 0 0; color: var(--sage); font-size: 10px; line-height: 1.45; }
 .checkout-form .payment-button { width: 100%; opacity: .55; cursor: not-allowed; }
 .checkout-note { margin: -7px 0 0; color: var(--muted); font-size: 9px; line-height: 1.45; text-align: center; }
+.checkout-form[hidden], .order-confirmation[hidden] { display: none; }
+.order-confirmation { display: grid; justify-items: start; gap: 12px; margin-top: 24px; padding: 23px; border: 1px solid var(--line); border-radius: 5px 25px 5px 25px; background: #fff9ed; }
+.order-confirmation > span { color: var(--gold-deep); font-size: 30px; }
+.order-confirmation h3, .order-confirmation p { margin: 0; }
+.order-confirmation h3 { font-size: 20px; }
+.order-confirmation p { color: var(--muted); font-size: 12px; line-height: 1.6; }
+.order-confirmation__number { color: var(--ink); }
+.order-confirmation__total { color: var(--ink) !important; font-weight: 700; }
+.order-confirmation .button { width: 100%; }
 .toast { position: fixed; z-index: 60; left: 50%; bottom: 25px; max-width: calc(100vw - 32px); padding: 10px 16px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 12px; opacity: 0; pointer-events: none; transform: translate(-50%, 15px); transition: .25s; }
 .toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
 

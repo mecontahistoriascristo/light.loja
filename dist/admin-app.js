@@ -1,5 +1,5 @@
 import { catalogStore } from "./catalog-store.js?v=20261010-admin-auth-fix";
-import { currentAdminState, hasSupabaseConfig, sendAdminMagicLink, signOutAdmin, uploadCatalogImage } from "./supabase-client.js?v=20261010-admin-auth-fix";
+import { currentAdminState, getSupabaseClient, hasSupabaseConfig, sendAdminMagicLink, signOutAdmin, uploadCatalogImage } from "./supabase-client.js?v=20261010-orders-retention";
 
 const $ = (selector) => document.querySelector(selector);
 const refs = {
@@ -8,7 +8,7 @@ const refs = {
   search: $("#catalog-search"), filter: $("#catalog-status-filter"), toast: $(".admin-toast"), categoryDeleteDialog: $("#category-delete-dialog"), categoryDeleteForm: $("#category-delete-form"), exportCsv: $("#export-catalog-csv"), exportJson: $("#export-catalog-json"),
 };
 const field = (name) => $("#" + name);
-const state = { catalog: { categories: [], products: [] }, campaigns: [], photos: [], campaignImage: null, query: "", filter: "all", pendingCategoryDeleteId: "" };
+const state = { catalog: { categories: [], products: [] }, campaigns: [], orders: [], orderMessage: "", photos: [], campaignImage: null, query: "", filter: "all", pendingCategoryDeleteId: "" };
 let toastTimer;
 const html = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
 const money = (value) => Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -22,6 +22,9 @@ const inventoryState = (product) => {
   if (product.stock <= 3) return { label: product.stock === 1 ? "Última unidade" : `${product.stock} unidades`, tone: "low" };
   return { label: `${product.stock} unidades`, tone: "available" };
 };
+const orderStatusLabel = (status) => status === "pending_payment" ? "Aguardando pagamento" : status === "cancelled" ? "Cancelado" : status === "expired" ? "Expirado" : status;
+const orderDate = (value) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+const orderMoney = (cents) => money(Number(cents || 0) / 100);
 const localDateTime = (value) => {
   if (!value || Number.isNaN(new Date(value).getTime())) return "";
   const date = new Date(value);
@@ -164,8 +167,48 @@ function renderCampaigns() {
   const list = [...state.campaigns].sort((a, b) => a.order - b.order || new Date(b.updatedAt) - new Date(a.updatedAt));
   refs.campaignList.innerHTML = list.length ? list.map((campaign) => `<article class="campaign-row"><img src="${html(campaign.imageUrl)}" alt="" /><div><span class="status-badge status-badge--${html(campaign.status)}">${label(campaign.status)}</span><h3>${html(campaign.name)}</h3><p>${html(campaign.title)} · posição ${campaign.order}<br />${html(campaignWindow(campaign))}</p></div><div class="campaign-row__actions"><button type="button" data-edit-campaign="${html(campaign.id)}">Editar</button><button type="button" data-duplicate-campaign="${html(campaign.id)}">Duplicar</button><button class="delete-product" type="button" data-delete-campaign="${html(campaign.id)}" aria-label="Excluir">×</button></div></article>`).join("") : `<p class="form-message">Ainda não existe uma campanha.</p>`;
 }
-function render() { renderMetrics(); renderCategorySelect(); renderCategories(); renderProducts(); renderCampaigns(); renderCampaignTargetOptions(); }
-async function refresh() { state.catalog = await catalogStore.hydrate({ includeUnpublished: true }); state.campaigns = await catalogStore.loadCampaigns({ includeUnpublished: true }); render(); }
+function renderOrders() {
+  const status = field("orders-status-filter").value;
+  const orders = state.orders.filter((order) => status === "all" || order.status === status);
+  field("orders-message").textContent = state.orderMessage;
+  field("admin-orders").innerHTML = orders.length ? orders.map((order) => {
+    const items = Array.isArray(order.items) ? order.items : [];
+    const address = order.shipping_address || {};
+    const shipping = order.shipping_service || {};
+    const pending = order.status === "pending_payment";
+    const personalDataDeleted = Boolean(order.personal_data_deleted_at);
+    return `<article class="order-card">
+      <details>
+        <summary><span><strong>Pedido ${html(order.id.slice(0, 8).toUpperCase())}</strong><small>${html(orderDate(order.created_at))}${pending && order.expires_at ? ` · expira ${html(orderDate(order.expires_at))}` : ""}</small></span><span class="order-card__summary-total"><strong>${orderMoney(order.total_cents)}</strong><span class="order-status order-status--${html(order.status)}">${orderStatusLabel(order.status)}</span></span></summary>
+        <div class="order-card__body">
+          ${personalDataDeleted ? `<p class="order-personal-data-note">Os dados pessoais deste pedido foram removidos após o prazo de retenção.</p>` : `<section><h3>Cliente</h3><p><strong>${html(order.customer_name)}</strong><br /><a href="mailto:${html(order.customer_email)}">${html(order.customer_email)}</a><br /><a href="tel:${html(String(order.customer_phone).replace(/[^0-9+]/g, ""))}">${html(order.customer_phone)}</a></p></section>
+          <section><h3>Entrega para ${html(order.recipient_name)}</h3><p>${html(address.street)} ${html(address.number)}${address.complement ? `, ${html(address.complement)}` : ""}<br />${html(address.neighborhood)} · ${html(address.city)} / ${html(address.state)}<br />CEP ${html(String(order.postal_code || "").replace(/^(\d{5})(\d{3})$/, "$1-$2"))}</p></section>`}
+          <section class="order-card__items"><h3>Peças</h3><ul>${items.map((item) => `<li><span>${html(item.title)} × ${Number(item.quantity) || 0}</span><strong>${orderMoney(item.lineTotalCents)}</strong></li>`).join("")}</ul></section>
+          <section class="order-card__totals"><p><span>Produtos</span><strong>${orderMoney(order.subtotal_cents)}</strong></p><p><span>Entrega · ${html(shipping.carrier || "")}${shipping.service ? ` · ${html(shipping.service)}` : ""}</span><strong>${orderMoney(order.shipping_cents)}</strong></p><p><span>Total</span><strong>${orderMoney(order.total_cents)}</strong></p></section>
+          ${pending ? `<button class="quiet-button order-cancel" type="button" data-cancel-order="${html(order.id)}">Cancelar pedido</button>` : ""}
+        </div>
+      </details>
+    </article>`;
+  }).join("") : state.orderMessage ? "" : `<p class="orders-empty">${state.orders.length ? "Não há pedidos nesta situação." : "Ainda não há pedidos."}</p>`;
+}
+function render() { renderMetrics(); renderCategorySelect(); renderCategories(); renderProducts(); renderCampaigns(); renderCampaignTargetOptions(); renderOrders(); }
+async function loadOrders() {
+  state.orderMessage = "Carregando pedidos…";
+  renderOrders();
+  const supabase = await getSupabaseClient();
+  if (!supabase) { state.orders = []; state.orderMessage = "Conexão com o Supabase indisponível."; return; }
+  const { data, error } = await supabase.from("light_orders").select("id,customer_name,customer_email,customer_phone,recipient_name,shipping_address,postal_code,items,shipping_service,subtotal_cents,shipping_cents,total_cents,status,created_at,cancelled_at,expires_at,expired_at,personal_data_deleted_at").order("created_at", { ascending: false }).limit(100);
+  if (error) {
+    state.orders = [];
+    state.orderMessage = error.code === "42P01" || /light_orders/i.test(error.message || "")
+      ? "A fila será exibida depois de aplicar a migração de pedidos no Supabase."
+      : "Não foi possível carregar os pedidos agora. Use Atualizar para tentar novamente.";
+    return;
+  }
+  state.orders = data || [];
+  state.orderMessage = "";
+}
+async function refresh() { state.catalog = await catalogStore.hydrate({ includeUnpublished: true }); state.campaigns = await catalogStore.loadCampaigns({ includeUnpublished: true }); await loadOrders(); render(); }
 
 function copiedLabel(value, maximum) { return `${String(value || "").slice(0, Math.max(0, maximum - 8)).trim()} cópia`.trim(); }
 function nextProductCopyId(product) {
@@ -265,11 +308,29 @@ refs.campaignForm.addEventListener("submit", async (event) => { event.preventDef
 
 document.addEventListener("submit", async (event) => { if (event.target.id !== "admin-login-form") return; event.preventDefault(); const form = event.target; const message = form.querySelector(".form-message"); const button = form.querySelector("button"); button.disabled = true; message.textContent = "Enviando link seguro…"; try { await sendAdminMagicLink(form.elements.email.value); message.textContent = "Link enviado. Abra seu e-mail neste dispositivo para entrar."; } catch (error) { message.textContent = errorText(error); } finally { button.disabled = false; } });
 document.addEventListener("click", async (event) => {
-  const move = event.target.closest("[data-photo-move]"); const remove = event.target.closest("[data-remove-photo]"); const metric = event.target.closest("[data-admin-filter]");
+  const move = event.target.closest("[data-photo-move]"); const remove = event.target.closest("[data-remove-photo]"); const metric = event.target.closest("[data-admin-filter]"); const cancelOrderButton = event.target.closest("[data-cancel-order]");
   if (move) { const from = Number(move.dataset.photoMove); const to = from + Number(move.dataset.direction); if (state.photos[to]) [state.photos[from], state.photos[to]] = [state.photos[to], state.photos[from]]; renderPhotos(); return; }
   if (remove) { state.photos.splice(Number(remove.dataset.removePhoto), 1); renderPhotos(); return; }
   if (event.target.closest("[data-close-category-delete]")) { closeCategoryDelete(); return; }
   if (event.target.closest("[data-remove-campaign-image]")) { state.campaignImage = null; renderCampaignPreview(); return; }
+  if (cancelOrderButton) {
+    const order = state.orders.find((entry) => entry.id === cancelOrderButton.dataset.cancelOrder);
+    if (!order || order.status !== "pending_payment" || !window.confirm(`Cancelar o pedido ${order.id.slice(0, 8).toUpperCase()}?`)) return;
+    cancelOrderButton.disabled = true;
+    try {
+      const supabase = await getSupabaseClient();
+      if (!supabase) throw new Error("Conexão com o Supabase indisponível.");
+      const { error } = await supabase.rpc("cancel_pending_light_order", { target_order_id: order.id });
+      if (error) throw error;
+      await refresh();
+      notify("Pedido cancelado.");
+    } catch (error) {
+      cancelOrderButton.disabled = false;
+      notify(errorText(error));
+    }
+    return;
+  }
+  if (event.target.closest("#refresh-orders")) { field("orders-message").textContent = "Atualizando pedidos…"; await loadOrders(); renderOrders(); return; }
   if (event.target.closest("#clear-product")) { clearProduct(); return; } if (event.target.closest("#clear-campaign")) { clearCampaign(); return; }
   if (metric) { const target = metric.dataset.adminFilter; if (target === "categories") return $("#category-title").scrollIntoView({ behavior: "smooth", block: "start" }); if (target === "campaigns") return $("#campaign-panel").scrollIntoView({ behavior: "smooth", block: "start" }); state.filter = target; refs.filter.value = target; $("#catalog-panel").scrollIntoView({ behavior: "smooth", block: "start" }); renderProducts(); return; }
   if (event.target.closest("[data-admin-signout]")) { await signOutAdmin(); await boot(); return; }
@@ -286,6 +347,8 @@ document.addEventListener("click", async (event) => {
     const deleteCampaign = event.target.closest("[data-delete-campaign]"); if (deleteCampaign) { const campaign = state.campaigns.find((entry) => entry.id === deleteCampaign.dataset.deleteCampaign); if (campaign && window.confirm(`Excluir “${campaign.name}”?`)) { await catalogStore.deleteCampaign(campaign.id); await refresh(); clearCampaign(); notify("Campanha removida."); } }
   } catch (error) { notify(errorText(error)); }
 });
+
+field("orders-status-filter").addEventListener("change", renderOrders);
 
 async function boot() { if (!hasSupabaseConfig()) return renderAuth({ configured: false, session: null, isAdmin: false }); const admin = await currentAdminState(); renderAuth(admin); if (!admin.isAdmin) return; await refresh(); clearProduct(); clearCategory(); clearCampaign(); }
 boot();

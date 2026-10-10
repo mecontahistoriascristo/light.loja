@@ -59,3 +59,22 @@ export async function uploadCatalogImage(file, folder = "products") {
   if (error) throw error;
   return supabase.storage.from("catalog-media").getPublicUrl(name).data.publicUrl;
 }
+
+export async function createPendingOrder(order) {
+  const supabase = await getSupabaseClient();
+  if (!supabase) throw new Error("Não foi possível conectar ao serviço seguro de pedidos.");
+  const { data, error } = await supabase.functions.invoke("create-order", { body: order });
+  if (error) {
+    let message = error.message || "Não foi possível registrar o pedido.";
+    try {
+      const response = error.context;
+      if (response instanceof Response) {
+        const body = await response.clone().json();
+        if (typeof body.message === "string") message = body.message;
+      }
+    } catch { /* Keep the SDK's readable error message. */ }
+    throw new Error(message);
+  }
+  if (!data?.order?.id) throw new Error("O serviço não confirmou o pedido. Tente novamente.");
+  return data.order;
+}

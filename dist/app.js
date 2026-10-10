@@ -1,4 +1,5 @@
 import { catalogStore } from "./catalog-store.js?v=20261010-admin-foundation";
+import { createPendingOrder } from "./supabase-client.js?v=20261010-orders-retention";
 
 const state = { cart: [], favorites: new Set(), query: "", categoryId: "", showNew: false, favoritesMode: false };
 const CART_STORAGE_KEY = "light-loja-cart-v1";
@@ -30,11 +31,12 @@ const checkoutMessage = document.querySelector(".checkout-message");
 const shippingOptions = document.querySelector(".shipping-options");
 const shippingSummary = document.querySelector(".shipping-summary");
 const shippingEndpoint = typeof window.LIGHT_CONFIG?.shippingQuoteEndpoint === "string" ? window.LIGHT_CONFIG.shippingQuoteEndpoint.trim() : "";
-const shippingState = { quotes: [], selectedId: "" };
+const shippingState = { quotes: [], selectedId: "", postalCode: "" };
 const productShippingState = new Map();
 const productDialog = document.querySelector("#product-dialog");
 const productDialogContent = document.querySelector("#product-dialog-content");
 const productDetailState = { id: "", photoIndex: 0 };
+let checkoutRequestKey = "";
 let toastTimer;
 let activeCampaignIndex = 0;
 let campaignAutoplayTimer;
@@ -532,6 +534,8 @@ function formatDeliveryDays(days) {
 function resetShippingQuote() {
   shippingState.quotes = [];
   shippingState.selectedId = "";
+  shippingState.postalCode = "";
+  checkoutRequestKey = "";
   shippingOptions.innerHTML = "";
   shippingMessage.textContent = "";
   shippingSummary.hidden = true;
@@ -575,12 +579,17 @@ function returnToCart() {
 
 function openCheckout() {
   if (!selectedShipping()) return showToast("Escolha uma modalidade de entrega antes de continuar.");
+  if (shippingState.postalCode !== shippingPostalCode.value.replace(/\D/g, "")) return showToast("Recalcule o frete para o CEP informado.");
   const drawer = document.querySelector(".cart-drawer");
   drawer.classList.remove("is-shipping");
   drawer.classList.add("is-checkout");
   shippingStep.hidden = true;
   checkoutStep.hidden = false;
   checkoutMessage.textContent = "";
+  checkoutForm.hidden = false;
+  document.querySelector(".order-confirmation").hidden = true;
+  checkoutForm.elements.postalCode.value = formatPostalCode(shippingState.postalCode);
+  checkoutRequestKey = checkoutRequestKey || crypto.randomUUID();
   renderCheckoutOrder();
   window.setTimeout(() => checkoutForm.elements.fullName.focus(), 0);
 }
@@ -626,6 +635,7 @@ async function requestShippingQuote() {
     if (!response.ok) throw new Error(result.message || "Não foi possível calcular o frete agora.");
     shippingState.quotes = Array.isArray(result.quotes) ? result.quotes : [];
     shippingState.selectedId = "";
+    shippingState.postalCode = shippingState.quotes.length ? destinationPostalCode : "";
     if (!shippingState.quotes.length) {
       shippingMessage.textContent = "Nenhuma modalidade foi encontrada para este CEP. Tente outro CEP ou fale com a gente.";
       return;
@@ -775,6 +785,16 @@ document.querySelector("#newsletter-form").addEventListener("submit", (event) =>
 
 shippingPostalCode.addEventListener("input", () => {
   shippingPostalCode.value = formatPostalCode(shippingPostalCode.value);
+  if (shippingState.postalCode && shippingState.postalCode !== shippingPostalCode.value.replace(/\D/g, "")) {
+    shippingState.quotes = [];
+    shippingState.selectedId = "";
+    shippingState.postalCode = "";
+    checkoutRequestKey = "";
+    shippingOptions.innerHTML = "";
+    shippingSummary.hidden = true;
+    shippingMessage.textContent = "O CEP mudou. Calcule novamente para ver as opções de entrega.";
+    renderOrderTotals();
+  }
 });
 
 document.addEventListener("input", (event) => {
@@ -813,10 +833,47 @@ shippingForm.addEventListener("submit", (event) => {
   requestShippingQuote();
 });
 
-checkoutForm.addEventListener("submit", (event) => {
+checkoutForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!checkoutForm.reportValidity()) return;
-  checkoutMessage.textContent = "Dados validados. O pagamento será liberado quando conectarmos o provedor seguro.";
+  if (!state.cart.length || !selectedShipping() || shippingState.postalCode !== checkoutForm.elements.postalCode.value.replace(/\D/g, "")) {
+    checkoutMessage.textContent = "O carrinho ou o frete mudou. Volte e confira os dados antes de continuar.";
+    return;
+  }
+  const submit = checkoutForm.querySelector('button[type="submit"]');
+  submit.disabled = true;
+  checkoutMessage.textContent = "Conferindo produtos e registrando o pedido…";
+  try {
+    const data = new FormData(checkoutForm);
+    const order = await createPendingOrder({
+      requestKey: checkoutRequestKey || (checkoutRequestKey = crypto.randomUUID()),
+      customer: {
+        fullName: data.get("fullName"), email: data.get("email"), phone: data.get("phone"), recipient: data.get("recipient"),
+      },
+      address: {
+        postalCode: String(data.get("postalCode") || "").replace(/\D/g, ""),
+        street: data.get("street"), number: data.get("number"), complement: data.get("complement"),
+        neighborhood: data.get("neighborhood"), city: data.get("city"), state: data.get("state"),
+      },
+      items: state.cart.map((item) => ({ id: item.id, quantity: item.quantity })),
+      shippingServiceId: selectedShipping().id,
+    });
+    document.querySelector(".order-confirmation__number").textContent = order.id.slice(0, 8).toUpperCase();
+    document.querySelector(".order-confirmation__total").textContent = `Total do pedido: ${formatPrice(order.totalCents / 100)}`;
+    checkoutForm.hidden = true;
+    checkoutForm.reset();
+    checkoutMessage.textContent = "";
+    document.querySelector(".order-confirmation").hidden = false;
+    state.cart = [];
+    persistCart();
+    renderCart();
+    resetShippingQuote();
+    checkoutRequestKey = "";
+  } catch (error) {
+    checkoutMessage.textContent = error instanceof Error ? error.message : "Não foi possível registrar o pedido. Tente novamente.";
+  } finally {
+    submit.disabled = false;
+  }
 });
 
 const menuToggle = document.querySelector(".menu-toggle");

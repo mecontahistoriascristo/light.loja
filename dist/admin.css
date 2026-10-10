@@ -151,6 +151,41 @@
 .campaign-row p { margin: 0; color: var(--muted); font-size: 10px; }
 .campaign-row__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .campaign-row__actions button { min-width: 59px; height: 30px; border: 1px solid #ddd7cf; border-radius: 999px; background: #fff; color: var(--ink); font-size: 10px; font-weight: 600; }
+.orders-panel { margin-bottom: 23px; }
+.orders-panel > .panel-heading { align-items: flex-start; }
+.orders-panel > .panel-heading h2 { margin-bottom: 5px; }
+.orders-panel > .panel-heading p:not(.eyebrow) { max-width: 560px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.orders-toolbar { display: flex; align-items: center; gap: 9px; margin: 20px 0 10px; }
+.orders-toolbar label { color: var(--muted); font-size: 10px; font-weight: 600; }
+.orders-toolbar select { min-height: 34px; border: 1px solid #ddd7cf; border-radius: 8px; padding: 0 9px; background: #fff; color: var(--ink); font: inherit; font-size: 10px; }
+.orders-toolbar .form-message { margin: 0 0 0 auto; text-align: right; }
+.orders-list { display: grid; gap: 9px; }
+.orders-empty { margin: 10px 0 0; border-top: 1px solid #eeeae4; padding-top: 17px; color: var(--muted); font-size: 11px; }
+.order-card { overflow: hidden; border: 1px solid #eeeae4; border-radius: 5px 17px 5px 17px; background: #fff; }
+.order-card details > summary { display: flex; min-height: 63px; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 15px; cursor: pointer; list-style: none; }
+.order-card details > summary::-webkit-details-marker { display: none; }
+.order-card details > summary::after { content: "+"; color: var(--gold-deep); font-size: 20px; }
+.order-card details[open] > summary::after { content: "−"; }
+.order-card details > summary > span:first-child, .order-card__summary-total { display: grid; gap: 4px; }
+.order-card details > summary strong { font-size: 12px; }
+.order-card details > summary small { color: var(--muted); font-size: 9px; }
+.order-card__summary-total { justify-items: end; }
+.order-status { width: fit-content; border-radius: 999px; padding: 3px 8px; background: #fff0d6; color: #86540e; font-size: 9px; font-weight: 700; }
+.order-status--cancelled { background: #efebe3; color: #68635c; }
+.order-status--expired { background: #f6e8e3; color: #854936; }
+.order-card__body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; border-top: 1px solid #eeeae4; padding: 16px; }
+.order-card__body section { min-width: 0; }
+.order-card__body h3 { margin: 0 0 6px; font-size: 10px; }
+.order-card__body p, .order-card__body li { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.7; overflow-wrap: anywhere; }
+.order-card__body a { color: var(--ink); }
+.order-card__items ul { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.order-card__items li, .order-card__totals p { display: flex; justify-content: space-between; gap: 12px; }
+.order-card__body li strong, .order-card__totals strong { color: var(--ink); font-weight: 600; text-align: right; }
+.order-card__totals { display: grid; align-content: start; gap: 4px; }
+.order-card__totals p:last-child { border-top: 1px solid #eeeae4; padding-top: 7px; color: var(--ink); font-weight: 700; }
+.order-cancel { grid-column: 1 / -1; justify-self: end; border-color: #d9a08f; color: var(--terracotta); }
+.order-cancel:hover { border-color: var(--terracotta); }
+.order-personal-data-note { grid-column: 1 / -1; margin: 0; border-radius: 9px; padding: 12px; background: #f4f1eb; color: var(--muted); font-size: 11px; line-height: 1.5; }
 
 @media (max-width: 880px) {
   .admin-intro, .admin-grid { grid-template-columns: 1fr; gap: 22px; }
@@ -186,4 +221,10 @@
   .campaign-row__actions { grid-column: 2; }
   .campaign-target-control { align-items: flex-start; flex-direction: column; }
   .admin-dialog form { padding: 25px 19px; }
+  .orders-toolbar { align-items: flex-start; flex-direction: column; }
+  .orders-toolbar select { width: 100%; }
+  .orders-toolbar .form-message { margin-left: 0; text-align: left; }
+  .order-card details > summary { align-items: flex-start; }
+  .order-card__body { grid-template-columns: 1fr; gap: 13px; }
+  .order-cancel { justify-self: stretch; }
 }

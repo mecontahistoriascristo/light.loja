@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css?v=20261010-buy-now" />
+    <link rel="stylesheet" href="./styles.css?v=20261010-orders-retention" />
   </head>
   <body>
     <header class="site-header" id="topo">
@@ -284,13 +284,14 @@
       </section>
       <section class="checkout-step" hidden aria-labelledby="checkout-title">
         <div class="drawer-header"><div><p class="eyebrow"><span></span> Dados de entrega</p><h2 id="checkout-title">Quase lá</h2></div><button class="icon-button" type="button" data-back-to-shipping aria-label="Voltar para entrega">←</button></div>
-        <p class="checkout-intro">Confirme quem vai receber e o endereço. Estes dados ficam somente nesta tela até conectarmos o pagamento seguro.</p>
+        <p class="checkout-intro">Confira os dados para receber o pedido. O CEP precisa ser o mesmo usado no cálculo do frete. Seus dados ficam visíveis somente para a equipe autorizada da Light. Pedidos pendentes expiram em 7 dias; se forem cancelados ou expirarem, os dados pessoais serão removidos 30 dias depois.</p>
         <form id="checkout-form" class="checkout-form">
           <div class="checkout-fields">
             <label class="checkout-field full">Nome completo<input name="fullName" autocomplete="name" maxlength="100" required /></label>
             <label class="checkout-field">E-mail<input name="email" type="email" autocomplete="email" maxlength="120" required /></label>
             <label class="checkout-field">Celular<input name="phone" inputmode="tel" autocomplete="tel" maxlength="20" required /></label>
             <label class="checkout-field full">Quem vai receber?<input name="recipient" autocomplete="shipping name" maxlength="100" required /></label>
+            <label class="checkout-field">CEP de entrega<input name="postalCode" inputmode="numeric" autocomplete="shipping postal-code" readonly required /></label>
             <label class="checkout-field full">Rua / Avenida<input name="street" autocomplete="shipping street-address" maxlength="120" required /></label>
             <label class="checkout-field">Número<input name="number" autocomplete="shipping address-line2" maxlength="20" required /></label>
             <label class="checkout-field">Complemento<input name="complement" autocomplete="shipping address-line2" maxlength="80" /></label>
@@ -304,17 +305,24 @@
             <div><span>Entrega</span><strong class="checkout-delivery">R$ 0,00</strong></div>
             <div class="checkout-order-total"><span>Total</span><strong class="checkout-total">R$ 0,00</strong></div>
           </div>
-          <button class="button button-primary" type="submit">Validar dados <span>→</span></button>
+          <button class="button button-primary" type="submit">Criar pedido de demonstração <span>→</span></button>
           <p class="checkout-message" aria-live="polite"></p>
-          <button class="button button-primary payment-button" type="button" disabled>Pagamento em breve</button>
-          <p class="checkout-note">Quando o provedor de pagamento for conectado, a finalização segura acontecerá aqui.</p>
+          <p class="checkout-note">Este pedido ficará como aguardando pagamento. Nenhum pagamento será iniciado nem dados de cartão serão solicitados.</p>
         </form>
+        <section class="order-confirmation" hidden aria-live="polite" aria-labelledby="order-confirmation-title">
+          <span aria-hidden="true">✦</span>
+          <h3 id="order-confirmation-title">Pedido registrado</h3>
+          <p>Seu pedido <strong class="order-confirmation__number"></strong> está aguardando pagamento. A equipe da Light pode acompanhar os detalhes no admin.</p>
+          <p class="order-confirmation__total"></p>
+          <p>Nenhum pagamento foi realizado. A opção de pagamento será disponibilizada quando uma integração segura estiver pronta.</p>
+          <button class="button button-primary" type="button" data-close-cart>Voltar à loja <span>→</span></button>
+        </section>
       </section>
     </aside>
     <div class="drawer-backdrop" hidden></div>
     <div class="toast" role="status" aria-live="polite"></div>
 
     <script src="./runtime-config.js"></script>
-    <script type="module" src="./app.js?v=20261010-admin-foundation"></script>
+    <script type="module" src="./app.js?v=20261010-orders-retention"></script>
   </body>
 </html>
