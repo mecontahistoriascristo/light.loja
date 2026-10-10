@@ -76,7 +76,7 @@ Deno.serve(async (request) => {
   const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") || "*";
   const corsHeaders = {
     "access-control-allow-origin": allowedOrigin,
-    "access-control-allow-headers": "authorization, content-type",
+    "access-control-allow-headers": "apikey, authorization, content-type, x-client-info",
     "access-control-allow-methods": "POST, OPTIONS",
     vary: "Origin",
   };

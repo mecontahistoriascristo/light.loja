@@ -31,6 +31,11 @@ const checkoutMessage = document.querySelector(".checkout-message");
 const shippingOptions = document.querySelector(".shipping-options");
 const shippingSummary = document.querySelector(".shipping-summary");
 const shippingEndpoint = typeof window.LIGHT_CONFIG?.shippingQuoteEndpoint === "string" ? window.LIGHT_CONFIG.shippingQuoteEndpoint.trim() : "";
+const shippingFunctionHeaders = () => {
+  const publishableKey = typeof window.LIGHT_CONFIG?.supabasePublishableKey === "string" ? window.LIGHT_CONFIG.supabasePublishableKey.trim() : "";
+  if (!publishableKey) throw new Error("A configuração segura do frete não está disponível.");
+  return { "content-type": "application/json", apikey: publishableKey, authorization: `Bearer ${publishableKey}` };
+};
 const shippingState = { quotes: [], selectedId: "", postalCode: "" };
 const productShippingState = new Map();
 const productDialog = document.querySelector("#product-dialog");
@@ -625,7 +630,7 @@ async function requestShippingQuote() {
   try {
     const response = await fetch(shippingEndpoint, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: shippingFunctionHeaders(),
       body: JSON.stringify({
         destinationPostalCode,
         items: state.cart.map((item) => ({ id: item.id, quantity: item.quantity, shipping: item.shipping })),
@@ -692,7 +697,7 @@ async function requestProductShippingQuote(form) {
   try {
     const response = await fetch(shippingEndpoint, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: shippingFunctionHeaders(),
       body: JSON.stringify({ destinationPostalCode: postalCode, items: [{ id: product.id, quantity: 1, shipping: product.shipping }] }),
     });
     const result = await response.json().catch(() => ({}));
