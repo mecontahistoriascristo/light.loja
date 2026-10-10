@@ -1,5 +1,5 @@
-import { catalogStore } from "./catalog-store.js?v=20261010-admin-foundation";
-import { currentAdminState, hasSupabaseConfig, sendAdminMagicLink, signOutAdmin, uploadCatalogImage } from "./supabase-client.js?v=20261010-admin-foundation";
+import { catalogStore } from "./catalog-store.js?v=20261010-admin-auth-fix";
+import { currentAdminState, hasSupabaseConfig, sendAdminMagicLink, signOutAdmin, uploadCatalogImage } from "./supabase-client.js?v=20261010-admin-auth-fix";
 
 const $ = (selector) => document.querySelector(selector);
 const refs = {

@@ -1,4 +1,4 @@
-import { getSupabaseClient, hasSupabaseConfig } from "./supabase-client.js?v=20261010-admin-foundation";
+import { getSupabaseClient, hasSupabaseConfig } from "./supabase-client.js?v=20261010-admin-auth-fix";
 
 const STORAGE_KEY = "light-loja-catalog-v1";
 let memoryCatalog = "";

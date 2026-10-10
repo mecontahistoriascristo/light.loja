@@ -22,6 +22,11 @@ export async function currentAdminState() {
   if (!supabase) return { configured: false, session: null, isAdmin: false };
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return { configured: true, session: null, isAdmin: false };
+  const { error: syncError } = await supabase.auth.setSession({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+  });
+  if (syncError) return { configured: true, session: null, isAdmin: false, error: syncError.message };
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) return { configured: true, session: null, isAdmin: false, error: userError?.message || "Não foi possível confirmar sua sessão." };
   const { data, error } = await supabase.rpc("is_light_admin");
