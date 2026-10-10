@@ -17,7 +17,7 @@
 [hidden] { display: none !important; }
 html { scroll-behavior: smooth; }
 body { margin: 0; isolation: isolate; color: var(--ink); background: var(--paper); font-family: var(--sans); font-size: 15px; line-height: 1.5; }
-body::before { position: fixed; z-index: -1; inset: 0; background: linear-gradient(rgba(255,253,250,.18), rgba(255,253,250,.18)), url("./assets/light-warm-background.avif") center / cover no-repeat; content: ""; pointer-events: none; }
+body::before { position: fixed; z-index: -1; inset: 0; background: linear-gradient(rgba(255,253,250,.45), rgba(255,253,250,.45)), url("./assets/light-warm-background.avif") center / cover no-repeat; content: ""; pointer-events: none; }
 button, input { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; }
