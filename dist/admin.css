@@ -64,6 +64,7 @@
 .form-actions { display: flex; align-items: center; gap: 14px; padding-top: 3px; }
 .form-message { margin: 0; color: var(--terracotta); font-size: 11px; }
 .admin-auth { margin-bottom: 24px; }
+.admin-workspace[hidden] { display: none !important; }
 .admin-auth-card { max-width: 720px; padding: 28px 31px; border: 1px solid #e0d9d0; border-radius: 5px 28px 5px 28px; background: var(--admin-surface); box-shadow: 0 16px 38px rgba(31,42,54,.035); }
 .admin-auth-card h2 { margin: 6px 0 8px; font-size: 30px; }
 .admin-auth-card p:not(.eyebrow) { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.65; }

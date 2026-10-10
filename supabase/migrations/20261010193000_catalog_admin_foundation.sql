@@ -18,12 +18,13 @@ returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = public, auth
 as $$
   select exists (
     select 1
-    from public.light_admins
-    where email = lower(coalesce(auth.jwt() ->> 'email', ''))
+    from public.light_admins admin
+    join auth.users account on lower(account.email) = admin.email
+    where account.id = auth.uid()
   );
 $$;
 

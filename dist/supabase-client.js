@@ -22,8 +22,10 @@ export async function currentAdminState() {
   if (!supabase) return { configured: false, session: null, isAdmin: false };
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return { configured: true, session: null, isAdmin: false };
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) return { configured: true, session: null, isAdmin: false, error: userError?.message || "Não foi possível confirmar sua sessão." };
   const { data, error } = await supabase.rpc("is_light_admin");
-  return { configured: true, session, isAdmin: !error && data === true, error: error?.message || "" };
+  return { configured: true, session: { ...session, user }, isAdmin: !error && data === true, error: error?.message || "" };
 }
 
 export async function sendAdminMagicLink(email) {
