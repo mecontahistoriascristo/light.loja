@@ -83,18 +83,21 @@ function quoteList(value: unknown) {
 }
 
 Deno.serve(async (request) => {
-  const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") || "https://lightloja.vercel.app";
+  const productionOrigin = "https://lightloja.vercel.app";
+  const configuredOrigin = Deno.env.get("ALLOWED_ORIGIN")?.trim();
+  const allowedOrigins = new Set([productionOrigin, ...(configuredOrigin && configuredOrigin !== "*" ? [configuredOrigin] : [])]);
   const originHeader = request.headers.get("origin") || "";
+  const originAllowed = !originHeader || allowedOrigins.has(originHeader);
   const corsHeaders = {
-    "access-control-allow-origin": allowedOrigin,
+    "access-control-allow-origin": originHeader && allowedOrigins.has(originHeader) ? originHeader : productionOrigin,
     "access-control-allow-headers": "authorization, apikey, content-type, x-client-info",
     "access-control-allow-methods": "POST, OPTIONS",
     vary: "Origin",
   };
 
+  if (!originAllowed) return json({ message: "Origem não autorizada." }, 403, corsHeaders);
   if (request.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (request.method !== "POST") return json({ message: "Método não permitido." }, 405, corsHeaders);
-  if (originHeader && allowedOrigin !== "*" && originHeader !== allowedOrigin) return json({ message: "Origem não autorizada." }, 403, corsHeaders);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
