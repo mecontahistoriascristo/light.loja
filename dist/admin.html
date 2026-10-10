@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Administração local do catálogo Light.loja." />
+    <title>Catálogo · Light.loja</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./admin.css" />
+  </head>
+  <body class="admin-body">
+    <header class="admin-header">
+      <div class="admin-shell admin-header-inner">
+        <a class="brand" href="./index.html" aria-label="Voltar para a Light.loja">
+          <svg class="brand-mark" viewBox="0 0 58 64" aria-hidden="true"><path d="M7 59V25L29 5l22 20v34" /><path class="star" d="m29 21 4 13 11 4-11 4-4 13-4-13-11-4 11-4z" /></svg>
+          <span class="brand-word">Light<span>.loja</span></span>
+        </a>
+        <a class="admin-return" href="./index.html">Ver vitrine <span>↗</span></a>
+      </div>
+    </header>
+
+    <main class="admin-shell admin-main">
+      <section class="admin-intro" aria-labelledby="admin-title">
+        <div>
+          <p class="eyebrow"><span></span> Administração local</p>
+          <h1 id="admin-title">Seu catálogo, <em>em suas mãos.</em></h1>
+          <p>Cadastre produtos, envie fotos, organize categorias e escolha o que a Light mostra primeiro.</p>
+        </div>
+        <div class="admin-notice"><span>⌂</span><p><strong>Prévia no navegador.</strong> Estas alterações ficam neste computador até conectarmos a área à conta administrativa e ao Supabase.</p></div>
+      </section>
+
+      <section class="metric-grid" aria-label="Resumo do catálogo">
+        <article><span>Peças cadastradas</span><strong id="total-products">0</strong></article>
+        <article><span>Visíveis na vitrine</span><strong id="visible-products">0</strong></article>
+        <article><span>Categorias ativas</span><strong id="total-categories">0</strong></article>
+        <article><span>Destaque do topo</span><strong id="hero-product">—</strong></article>
+      </section>
+
+      <div class="admin-grid">
+        <section class="admin-panel product-form-panel" aria-labelledby="product-form-title">
+          <div class="panel-heading"><div><p class="eyebrow"><span></span> Produto</p><h2 id="product-form-title">Adicionar peça</h2></div><button class="quiet-button" id="clear-product" type="button">Limpar</button></div>
+          <form id="product-form" class="admin-form">
+            <input id="product-id" type="hidden" />
+            <div class="field full"><label for="product-title">Nome do produto</label><input id="product-title" name="title" required maxlength="90" placeholder="Ex.: Luminária Lume" /></div>
+            <div class="field"><label for="product-category">Categoria</label><select id="product-category" name="categoryId" required></select></div>
+            <div class="field"><label for="product-price">Preço em R$</label><input id="product-price" name="price" inputmode="decimal" type="number" min="0" step="0.01" required placeholder="0,00" /></div>
+            <div class="field"><label for="product-tag">Selo curto</label><input id="product-tag" name="tag" maxlength="40" placeholder="Ex.: Novidade" /></div>
+            <div class="field"><label for="product-material">Material</label><input id="product-material" name="material" maxlength="80" value="PLA impresso em 3D" placeholder="Ex.: PLA impresso em 3D" /></div>
+            <div class="field"><label for="product-production-time">Prazo de produção</label><input id="product-production-time" name="productionTime" maxlength="80" value="Produção em 3 a 5 dias úteis" placeholder="Ex.: Produção em 3 a 5 dias úteis" /></div>
+            <div class="field"><label for="product-availability">Disponibilidade</label><select id="product-availability" name="availability"><option>Sob encomenda</option><option>Pronta entrega</option><option>Últimas unidades</option></select></div>
+            <div class="field"><label for="product-stock">Estoque pronto</label><input id="product-stock" name="stock" type="number" min="0" step="1" inputmode="numeric" placeholder="Sob encomenda" /><small>Deixe vazio para produzir por encomenda.</small></div>
+            <div class="field"><label for="product-featured">Ordem entre os destaques</label><input id="product-featured" name="featuredRank" type="number" min="0" max="99" value="0" /><small>0 não destaca. 1 aparece antes de 2.</small></div>
+            <fieldset class="shipping-fields full"><legend>Embalagem para calcular frete</legend><p>Use medidas da peça já embalada. Enquanto não houver medidas reais, a caixa provisória é 15 × 10 × 13 cm e 0,3 kg.</p><div><label for="product-weight">Peso (kg)<input id="product-weight" inputmode="decimal" type="number" min="0.01" max="30" step="0.01" value="0.3" required /></label><label for="product-height">Altura (cm)<input id="product-height" inputmode="decimal" type="number" min="0.1" max="100" step="0.1" value="13" required /></label><label for="product-width">Largura (cm)<input id="product-width" inputmode="decimal" type="number" min="0.1" max="100" step="0.1" value="10" required /></label><label for="product-length">Comprimento (cm)<input id="product-length" inputmode="decimal" type="number" min="0.1" max="100" step="0.1" value="15" required /></label></div></fieldset>
+            <div class="field full"><label for="product-description">Descrição curta</label><textarea id="product-description" name="description" maxlength="420" rows="3" placeholder="O que torna essa peça especial?"></textarea></div>
+            <div class="field full"><label for="product-art">Visual provisório sem foto</label><select id="product-art" name="art"><option value="art-lamp">Luminária</option><option value="art-arch">Arco</option><option value="art-house">Casinha</option><option value="art-orbit">Órbita</option></select></div>
+            <div class="field full photo-field"><label for="product-photos">Fotos do produto</label><input id="product-photos" type="file" accept="image/png,image/jpeg,image/webp" multiple /><small>Até quatro fotos. Para esta prévia, use imagens de até 700 KB cada.</small><div class="photo-preview" id="photo-preview" aria-live="polite"></div></div>
+            <div class="form-switches full"><label class="switch"><input id="product-visible" type="checkbox" checked /><span></span> Mostrar na vitrine</label><label class="switch"><input id="product-hero" type="checkbox" /><span></span> Usar a primeira foto no topo da home</label></div>
+            <div class="form-actions full"><button class="button button-primary" type="submit">Salvar produto <span>→</span></button><p id="product-message" class="form-message" aria-live="polite"></p></div>
+          </form>
+        </section>
+
+        <section class="admin-panel category-panel" aria-labelledby="category-title">
+          <div class="panel-heading"><div><p class="eyebrow"><span></span> Organização</p><h2 id="category-title">Categorias</h2></div></div>
+          <form id="category-form" class="category-form">
+            <input id="category-previous-id" type="hidden" />
+            <div class="field category-name"><label for="category-name">Nova categoria</label><input id="category-name" required maxlength="40" placeholder="Ex.: Escritório" /></div>
+            <div class="field category-icon"><label for="category-icon">Ícone</label><input id="category-icon" maxlength="3" value="✦" /></div>
+            <div class="field category-order"><label for="category-order">Ordem</label><input id="category-order" type="number" min="1" value="6" /></div>
+            <label class="mini-switch"><input id="category-nav" type="checkbox" checked /> Exibir no menu</label>
+            <button class="button button-primary" type="submit">Salvar</button>
+          </form>
+          <div class="category-list" id="category-list"></div>
+        </section>
+      </div>
+
+      <section class="admin-panel catalog-panel" aria-labelledby="catalog-title">
+        <div class="panel-heading"><div><p class="eyebrow"><span></span> Vitrine</p><h2 id="catalog-title">Produtos cadastrados</h2></div><button id="reset-catalog" class="quiet-button danger-button" type="button">Restaurar demonstração</button></div>
+        <div class="admin-product-list" id="admin-product-list"></div>
+      </section>
+    </main>
+
+    <div class="admin-toast" role="status" aria-live="polite"></div>
+    <script type="module" src="./admin.js?v=20261010-conversion"></script>
+  </body>
+</html>
