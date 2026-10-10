@@ -23,21 +23,23 @@
       </div>
     </header>
 
-    <main class="admin-shell admin-main">
+    <main class="admin-shell admin-main" id="admin-app">
+      <section class="admin-auth" id="admin-auth" aria-live="polite"></section>
+      <section class="admin-workspace" id="admin-workspace" hidden>
       <section class="admin-intro" aria-labelledby="admin-title">
         <div>
-          <p class="eyebrow"><span></span> Administração local</p>
+          <p class="eyebrow"><span></span> Administração Light</p>
           <h1 id="admin-title">Seu catálogo, <em>em suas mãos.</em></h1>
           <p>Cadastre produtos, envie fotos, organize categorias e escolha o que a Light mostra primeiro.</p>
         </div>
-        <div class="admin-notice"><span>⌂</span><p><strong>Prévia no navegador.</strong> Estas alterações ficam neste computador até conectarmos a área à conta administrativa e ao Supabase.</p></div>
+        <div class="admin-notice"><span>⌂</span><p><strong>Catálogo centralizado.</strong> Produtos, imagens e campanhas publicados aqui aparecem na vitrine para todos os visitantes.</p></div>
       </section>
 
       <section class="metric-grid" aria-label="Resumo do catálogo">
-        <article><span>Peças cadastradas</span><strong id="total-products">0</strong></article>
-        <article><span>Visíveis na vitrine</span><strong id="visible-products">0</strong></article>
-        <article><span>Categorias ativas</span><strong id="total-categories">0</strong></article>
-        <article><span>Destaque do topo</span><strong id="hero-product">—</strong></article>
+        <button type="button" class="metric-card" data-admin-filter="all"><span>Peças cadastradas</span><strong id="total-products">0</strong><small>Ver catálogo →</small></button>
+        <button type="button" class="metric-card" data-admin-filter="published"><span>Publicadas na vitrine</span><strong id="visible-products">0</strong><small>Ver publicadas →</small></button>
+        <button type="button" class="metric-card" data-admin-filter="categories"><span>Categorias ativas</span><strong id="total-categories">0</strong><small>Organizar →</small></button>
+        <button type="button" class="metric-card metric-card--dark" data-admin-filter="campaigns"><span>Campanhas no carrossel</span><strong id="campaign-count">0</strong><small>Editar carrossel →</small></button>
       </section>
 
       <div class="admin-grid">
@@ -48,17 +50,20 @@
             <div class="field full"><label for="product-title">Nome do produto</label><input id="product-title" name="title" required maxlength="90" placeholder="Ex.: Luminária Lume" /></div>
             <div class="field"><label for="product-category">Categoria</label><select id="product-category" name="categoryId" required></select></div>
             <div class="field"><label for="product-price">Preço em R$</label><input id="product-price" name="price" inputmode="decimal" type="number" min="0" step="0.01" required placeholder="0,00" /></div>
+            <div class="field"><label for="product-compare-at">Preço anterior (opcional)</label><input id="product-compare-at" name="compareAtPrice" inputmode="decimal" type="number" min="0" step="0.01" placeholder="Ex.: 99,90" /><small>Exibido como preço riscado quando for maior que o atual.</small></div>
+            <div class="field"><label for="product-sku">SKU interno (opcional)</label><input id="product-sku" name="sku" maxlength="80" autocomplete="off" placeholder="Ex.: NAT-ARCO-01" /><small>Facilita estoque, produção e busca no admin.</small></div>
             <div class="field"><label for="product-tag">Selo curto</label><input id="product-tag" name="tag" maxlength="40" placeholder="Ex.: Novidade" /></div>
             <div class="field"><label for="product-material">Material</label><input id="product-material" name="material" maxlength="80" value="PLA impresso em 3D" placeholder="Ex.: PLA impresso em 3D" /></div>
             <div class="field"><label for="product-production-time">Prazo de produção</label><input id="product-production-time" name="productionTime" maxlength="80" value="Produção em 3 a 5 dias úteis" placeholder="Ex.: Produção em 3 a 5 dias úteis" /></div>
+            <div class="field"><label for="product-status">Status</label><select id="product-status" name="status"><option value="draft">Rascunho</option><option value="published">Publicado</option><option value="archived">Arquivado</option></select><small>Somente produtos publicados aparecem na loja.</small></div>
             <div class="field"><label for="product-availability">Disponibilidade</label><select id="product-availability" name="availability"><option>Sob encomenda</option><option>Pronta entrega</option><option>Últimas unidades</option></select></div>
             <div class="field"><label for="product-stock">Estoque pronto</label><input id="product-stock" name="stock" type="number" min="0" step="1" inputmode="numeric" placeholder="Sob encomenda" /><small>Deixe vazio para produzir por encomenda.</small></div>
-            <div class="field"><label for="product-featured">Ordem entre os destaques</label><input id="product-featured" name="featuredRank" type="number" min="0" max="99" value="0" /><small>0 não destaca. 1 aparece antes de 2.</small></div>
+            <div class="field"><label for="product-featured">Ordem na vitrine</label><input id="product-featured" name="featuredRank" type="number" min="0" max="99" value="0" /><small>0 não destaca. 1 aparece antes de 2.</small></div>
             <fieldset class="shipping-fields full"><legend>Embalagem para calcular frete</legend><p>Use medidas da peça já embalada. Enquanto não houver medidas reais, a caixa provisória é 15 × 10 × 13 cm e 0,3 kg.</p><div><label for="product-weight">Peso (kg)<input id="product-weight" inputmode="decimal" type="number" min="0.01" max="30" step="0.01" value="0.3" required /></label><label for="product-height">Altura (cm)<input id="product-height" inputmode="decimal" type="number" min="0.1" max="100" step="0.1" value="13" required /></label><label for="product-width">Largura (cm)<input id="product-width" inputmode="decimal" type="number" min="0.1" max="100" step="0.1" value="10" required /></label><label for="product-length">Comprimento (cm)<input id="product-length" inputmode="decimal" type="number" min="0.1" max="100" step="0.1" value="15" required /></label></div></fieldset>
             <div class="field full"><label for="product-description">Descrição curta</label><textarea id="product-description" name="description" maxlength="420" rows="3" placeholder="O que torna essa peça especial?"></textarea></div>
+            <details class="advanced-fields full"><summary>SEO e compartilhamento <span>opcional</span></summary><div class="advanced-fields__content"><div class="field"><label for="product-seo-title">Título para buscadores</label><input id="product-seo-title" maxlength="70" placeholder="Até 70 caracteres" /></div><div class="field"><label for="product-seo-description">Descrição para buscadores</label><textarea id="product-seo-description" maxlength="160" rows="2" placeholder="Até 160 caracteres"></textarea></div></div></details>
             <div class="field full"><label for="product-art">Visual provisório sem foto</label><select id="product-art" name="art"><option value="art-lamp">Luminária</option><option value="art-arch">Arco</option><option value="art-house">Casinha</option><option value="art-orbit">Órbita</option></select></div>
-            <div class="field full photo-field"><label for="product-photos">Fotos do produto</label><input id="product-photos" type="file" accept="image/png,image/jpeg,image/webp" multiple /><small>Até quatro fotos. Para esta prévia, use imagens de até 700 KB cada.</small><div class="photo-preview" id="photo-preview" aria-live="polite"></div></div>
-            <div class="form-switches full"><label class="switch"><input id="product-visible" type="checkbox" checked /><span></span> Mostrar na vitrine</label><label class="switch"><input id="product-hero" type="checkbox" /><span></span> Usar a primeira foto no topo da home</label></div>
+            <div class="field full photo-field"><label for="product-photos">Fotos do produto</label><input id="product-photos" type="file" accept="image/png,image/jpeg,image/webp" multiple /><small>Até quatro fotos de até 5 MB. A primeira é a capa. Use os botões para ordenar.</small><div class="photo-preview" id="photo-preview" aria-live="polite"></div></div>
             <div class="form-actions full"><button class="button button-primary" type="submit">Salvar produto <span>→</span></button><p id="product-message" class="form-message" aria-live="polite"></p></div>
           </form>
         </section>
@@ -77,13 +82,47 @@
         </section>
       </div>
 
-      <section class="admin-panel catalog-panel" aria-labelledby="catalog-title">
-        <div class="panel-heading"><div><p class="eyebrow"><span></span> Vitrine</p><h2 id="catalog-title">Produtos cadastrados</h2></div><button id="reset-catalog" class="quiet-button danger-button" type="button">Restaurar demonstração</button></div>
+      <section class="admin-panel catalog-panel" aria-labelledby="catalog-title" id="catalog-panel">
+        <div class="panel-heading"><div><p class="eyebrow"><span></span> Vitrine</p><h2 id="catalog-title">Produtos cadastrados</h2></div><div class="catalog-panel-actions"><div class="catalog-tools"><input id="catalog-search" type="search" placeholder="Buscar produto" /><select id="catalog-status-filter"><option value="all">Todos os status</option><option value="published">Publicados</option><option value="draft">Rascunhos</option><option value="archived">Arquivados</option><option value="low-stock">Estoque baixo</option><option value="sold-out">Esgotados</option></select></div><div class="catalog-export-actions"><button id="export-catalog-csv" type="button" class="quiet-button">Exportar CSV ↓</button><button id="export-catalog-json" type="button" class="quiet-button">Backup JSON ↓</button></div></div></div>
         <div class="admin-product-list" id="admin-product-list"></div>
+      </section>
+      <section class="admin-panel campaign-panel" aria-labelledby="campaign-title" id="campaign-panel">
+        <div class="panel-heading"><div><p class="eyebrow"><span></span> Home</p><h2 id="campaign-title">Campanhas e carrossel</h2><p class="panel-description">Cada campanha controla uma posição do carrossel da home. Você escolhe conteúdo, imagem, destino e ordem.</p></div><button class="quiet-button" id="clear-campaign" type="button">Nova campanha</button></div>
+        <form id="campaign-form" class="admin-form campaign-form">
+          <input id="campaign-id" type="hidden" />
+          <div class="field"><label for="campaign-name">Nome interno</label><input id="campaign-name" required maxlength="60" placeholder="Ex.: Especial de Natal" /></div>
+          <div class="field"><label for="campaign-status">Status</label><select id="campaign-status"><option value="draft">Rascunho</option><option value="published">Publicado</option><option value="archived">Arquivado</option></select></div>
+          <div class="field"><label for="campaign-eyebrow">Sobretítulo</label><input id="campaign-eyebrow" maxlength="60" placeholder="Ex.: Coleção de Natal" /></div>
+          <div class="field"><label for="campaign-order">Ordem no carrossel</label><input id="campaign-order" type="number" min="0" value="1" /></div>
+          <div class="field"><label for="campaign-starts-at">Começa em (opcional)</label><input id="campaign-starts-at" type="datetime-local" /><small>Sem data, fica disponível imediatamente ao publicar.</small></div>
+          <div class="field"><label for="campaign-ends-at">Termina em (opcional)</label><input id="campaign-ends-at" type="datetime-local" /><small>Após esse momento, sai do carrossel.</small></div>
+          <div class="field full"><label for="campaign-title-input">Título</label><input id="campaign-title-input" required maxlength="120" placeholder="Ex.: Peças que iluminam dezembro." /></div>
+          <div class="field full"><label for="campaign-description">Descrição</label><textarea id="campaign-description" maxlength="320" rows="3"></textarea></div>
+          <div class="field"><label for="campaign-cta-label">Texto do botão</label><input id="campaign-cta-label" maxlength="50" value="Conhecer a coleção" /></div>
+          <div class="field"><label for="campaign-target-type">Destino do botão</label><select id="campaign-target-type"><option value="catalog">Catálogo</option><option value="category">Categoria</option><option value="product">Produto</option><option value="url">Link externo</option></select></div>
+          <div class="field full campaign-target-field"><label for="campaign-target">Destino</label><div class="campaign-target-control"><input id="campaign-target" maxlength="300" value="#produtos" /><button id="preview-campaign-target" type="button" class="quiet-button">Pré-visualizar ↗</button></div><datalist id="campaign-target-options"></datalist><small id="campaign-target-help">O botão levará o visitante para o catálogo.</small></div>
+          <div class="field full photo-field"><label for="campaign-image">Imagem da campanha</label><input id="campaign-image" type="file" accept="image/png,image/jpeg,image/webp" /><small>Uma imagem horizontal ou quadrada de até 5 MB.</small><div class="photo-preview" id="campaign-image-preview" aria-live="polite"></div></div>
+          <div class="form-actions full"><button class="button button-primary" type="submit">Salvar campanha <span>→</span></button><p id="campaign-message" class="form-message" aria-live="polite"></p></div>
+        </form>
+        <div class="campaign-list" id="campaign-list"></div>
+      </section>
       </section>
     </main>
 
+    <dialog class="admin-dialog" id="category-delete-dialog" aria-labelledby="category-delete-title">
+      <form method="dialog" id="category-delete-form">
+        <button class="admin-dialog__close" type="button" data-close-category-delete aria-label="Fechar">×</button>
+        <p class="eyebrow"><span></span> Ação irreversível</p>
+        <h2 id="category-delete-title">Remover categoria</h2>
+        <p id="category-delete-description">Escolha o destino das peças antes de confirmar.</p>
+        <label class="field" id="category-reassign-field" for="category-reassign-to">Mover peças para<select id="category-reassign-to"></select></label>
+        <div class="admin-dialog__actions"><button type="button" class="quiet-button" data-close-category-delete>Cancelar</button><button type="submit" class="button button-primary danger-confirm">Mover e remover</button></div>
+        <p class="form-message" id="category-delete-message" aria-live="polite"></p>
+      </form>
+    </dialog>
+
     <div class="admin-toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./admin.js?v=20261010-conversion"></script>
+    <script src="./runtime-config.js"></script>
+    <script type="module" src="./admin-app.js?v=20261010-admin-foundation"></script>
   </body>
 </html>

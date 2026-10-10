@@ -20,14 +20,31 @@ Abra `http://127.0.0.1:4173`.
 - Navegação por categorias, vitrines e história da marca.
 - Catálogo ilustrativo local, com filtros por categoria e busca.
 - Carrinho de demonstração no navegador.
-- Área em `admin.html` para cadastrar, editar, ocultar e remover produtos; enviar fotos locais; criar categorias; ordenar destaques e definir o produto do topo.
-- Módulo de catálogo compartilhado pela vitrine e pelo painel, persistido no navegador nesta etapa.
+- Área em `admin.html` protegida por link de acesso do Supabase para publicar produtos, organizar categorias, enviar imagens e administrar campanhas do carrossel.
+- Catálogo, imagens e campanhas centralizados no Supabase; a vitrine consome somente conteúdo publicado.
 - Etapa de entrega no carrinho, pronta para cotar CEP pela SuperFrete através de uma Edge Function segura.
 - Medidas e peso editáveis por produto; até termos medições reais, a vitrine usa uma caixa provisória de 15 × 10 × 13 cm e 0,3 kg.
 - Imagens demonstrativas de campanha em `dist/assets/` para coleção, Natal, brinquedos e Dia dos Namorados.
 - Ícone local da marca em `dist/favicon.svg`.
 
-Os produtos, preços, imagens e textos de venda continuam identificados como demonstrativos até recebermos o catálogo real.
+## Ativar o admin profissional
+
+O banco e as políticas estão versionados em `supabase/migrations/20261010193000_catalog_admin_foundation.sql`.
+
+1. No Supabase, abra **SQL Editor** e execute todo o conteúdo da migração uma única vez. Ela cria as tabelas de catálogo e campanhas, o bucket `catalog-media`, as políticas RLS e importa a coleção inicial.
+2. Em **Authentication → URL Configuration**, inclua `https://lightloja.vercel.app/admin.html` em **Redirect URLs**. Para testar localmente, inclua também `http://127.0.0.1:4173/admin.html`.
+3. O primeiro administrador é `mecontahistorias.cristo@gmail.com`. Para liberar outra pessoa, execute: `insert into public.light_admins(email) values ('outro@email.com');`.
+4. Acesse `https://lightloja.vercel.app/admin.html`, informe o e-mail autorizado e abra o link enviado pelo Supabase.
+
+O navegador recebe apenas a chave publicável do Supabase. Imagens são públicas para leitura, mas uploads e alterações de catálogo exigem uma sessão administrativa autorizada pelas políticas do banco.
+
+Antes de publicar uma nova versão, rode também:
+
+```bash
+node scripts/verify-release.mjs
+```
+
+O verificador confirma que a vitrine e o admin estão ligados aos módulos certos e bloqueia, por inspeção estática, o vazamento acidental de segredos da SuperFrete no frontend.
 
 ## Ativar a cotação da SuperFrete em Sandbox
 
@@ -43,7 +60,6 @@ Depois, abra o carrinho, escolha **Continuar para entrega** e consulte um CEP. A
 
 ## Próxima fatia
 
-1. Conectar este módulo de catálogo ao Supabase Storage e PostgreSQL, protegidos por autenticação administrativa.
-2. Criar página individual de produto e variações.
-3. Conectar carrinho, estoque e pedidos ao Supabase.
-4. Integrar pagamento, persistência de pedidos, emissão de etiquetas e e-mails transacionais.
+1. Aplicar a migração e ativar o login administrativo no Supabase.
+2. Conectar carrinho, estoque e pedidos ao Supabase.
+3. Integrar pagamento, persistência de pedidos, emissão de etiquetas e e-mails transacionais.

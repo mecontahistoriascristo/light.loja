@@ -1,4 +1,4 @@
-import { catalogStore } from "./catalog-store.js?v=20261010-conversion";
+import { catalogStore } from "./catalog-store.js?v=20261010-admin-foundation";
 
 const state = { cart: [], favorites: new Set(), query: "", categoryId: "", showNew: false, favoritesMode: false };
 const CART_STORAGE_KEY = "light-loja-cart-v1";
@@ -10,8 +10,8 @@ const resetFilter = document.querySelector(".reset-filter");
 const toast = document.querySelector(".toast");
 const campaignCarousel = document.querySelector("#campaign-carousel");
 const campaignTrack = document.querySelector("#campaign-track");
-const campaignSlides = [...document.querySelectorAll("[data-campaign-slide]")];
-const campaignDots = [...document.querySelectorAll("[data-carousel-index]")];
+let campaignSlides = [...document.querySelectorAll("[data-campaign-slide]")];
+let campaignDots = [...document.querySelectorAll("[data-carousel-index]")];
 const campaignProgress = document.querySelector("#carousel-progress");
 const campaignStatus = document.querySelector("#campaign-status");
 const campaignPreviousImage = document.querySelector("#carousel-previous-image");
@@ -19,7 +19,7 @@ const campaignNextImage = document.querySelector("#carousel-next-image");
 const campaignPreviousTitle = document.querySelector("#carousel-previous-title");
 const campaignNextTitle = document.querySelector("#carousel-next-title");
 const campaignCount = document.querySelector("#carousel-count");
-const campaignNames = ["Sagrada Família", "Arco da Estrela", "Presépio Completo", "Vila de Natal"];
+let campaignNames = ["Sagrada Família", "Arco da Estrela", "Presépio Completo", "Vila de Natal"];
 const shippingStep = document.querySelector(".shipping-step");
 const checkoutStep = document.querySelector(".checkout-step");
 const shippingForm = document.querySelector("#shipping-quote-form");
@@ -42,6 +42,8 @@ let campaignPointerStart;
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
 const formatPrice = (value) => Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const hasDiscount = (product) => Number(product?.compareAtPrice) > Number(product?.price);
+const productPrice = (product, className = "product-price") => `<span class="${className}">${hasDiscount(product) ? `<s>${formatPrice(product.compareAtPrice)}</s>` : ""}<strong>${formatPrice(product.price)}</strong></span>`;
 const sortedCategories = (catalog) => [...catalog.categories].filter((category) => category.visible).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name, "pt-BR"));
 const categoryFor = (catalog, id) => catalog.categories.find((category) => category.id === id);
 const stockLimit = (product) => Number.isInteger(product?.stock) ? product.stock : null;
@@ -51,6 +53,7 @@ const stockNotice = (product) => {
   const stock = stockLimit(product);
   if (stock === null) return "";
   if (stock === 0) return "<span class=\"stock-note stock-note--sold-out\">Indisponível no momento</span>";
+  if (stock <= 3) return `<span class="stock-note stock-note--low">${stock === 1 ? "Última unidade pronta" : `Últimas ${stock} unidades prontas`}</span>`;
   return `<span class="stock-note">${stock === 1 ? "1 unidade pronta" : `${stock} unidades prontas`}</span>`;
 };
 
@@ -139,7 +142,7 @@ function productCard(product, catalog) {
       <div class="product-info">
         <p class="product-category">${escapeHtml(category?.name || "Coleção Light")}</p>
         <h3 class="product-title"><button type="button" data-view-product="${escapeHtml(product.id)}">${escapeHtml(product.title)}</button></h3>
-        <div class="product-bottom"><span class="product-price">${formatPrice(product.price)}</span><button class="add-button" type="button" ${soldOut ? "disabled" : `data-add="${escapeHtml(product.id)}"`} aria-label="${soldOut ? `${escapeHtml(product.title)} indisponível` : `Adicionar ${escapeHtml(product.title)} ao carrinho`}" title="${soldOut ? "Indisponível" : "Adicionar ao carrinho"}">${soldOut ? "—" : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 4.5h2l1.7 10.1a2 2 0 0 0 2 1.7h7.7a2 2 0 0 0 1.9-1.5L20.4 8H7"/><circle cx="9.5" cy="20" r="1"/><circle cx="17" cy="20" r="1"/></svg>`}</button></div>
+        <div class="product-bottom">${productPrice(product)}<button class="add-button" type="button" ${soldOut ? "disabled" : `data-add="${escapeHtml(product.id)}"`} aria-label="${soldOut ? `${escapeHtml(product.title)} indisponível` : `Adicionar ${escapeHtml(product.title)} ao carrinho`}" title="${soldOut ? "Indisponível" : "Adicionar ao carrinho"}">${soldOut ? "—" : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 4.5h2l1.7 10.1a2 2 0 0 0 1.9-1.5L20.4 8H7"/><circle cx="9.5" cy="20" r="1"/><circle cx="17" cy="20" r="1"/></svg>`}</button></div>
         <p class="product-production-time">${escapeHtml(product.productionTime)}</p>
         ${stockNotice(product)}
         <button class="product-shipping-toggle" type="button" data-toggle-product-shipping="${escapeHtml(product.id)}" aria-expanded="${Boolean(productShipping?.open)}">Calcular frete</button>
@@ -192,7 +195,7 @@ function renderProductDialog() {
           <div><dt>Disponibilidade</dt><dd>${escapeHtml(availabilityLabel(product))}</dd></div>
           <div><dt>Prazo</dt><dd>${escapeHtml(product.productionTime)}</dd></div>
         </dl>
-        <div class="product-detail__purchase"><strong>${formatPrice(product.price)}</strong>${soldOut ? `<button class="button button-primary" type="button" disabled>Indisponível</button><span class="stock-note stock-note--sold-out">Esta peça não está disponível para compra agora.</span>` : `<button class="button button-primary" type="button" data-detail-buy-now="${escapeHtml(product.id)}">Comprar agora <span>→</span></button><button class="product-detail__add" type="button" data-detail-add="${escapeHtml(product.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 4.5h2l1.7 10.1a2 2 0 0 0 2 1.7h7.7a2 2 0 0 0 1.9-1.5L20.4 8H7"/><circle cx="9.5" cy="20" r="1"/><circle cx="17" cy="20" r="1"/></svg>Adicionar ao carrinho</button>`}<button class="product-detail__share" type="button" data-share-product="${escapeHtml(product.id)}">↗ Compartilhar</button></div>
+        <div class="product-detail__purchase">${productPrice(product, "product-detail__price")}${soldOut ? `<button class="button button-primary" type="button" disabled>Indisponível</button><span class="stock-note stock-note--sold-out">Esta peça não está disponível para compra agora.</span>` : `<button class="button button-primary" type="button" data-detail-buy-now="${escapeHtml(product.id)}">Comprar agora <span>→</span></button><button class="product-detail__add" type="button" data-detail-add="${escapeHtml(product.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 4.5h2l1.7 10.1a2 2 0 0 0 2 1.7h7.7a2 2 0 0 0 1.9-1.5L20.4 8H7"/><circle cx="9.5" cy="20" r="1"/><circle cx="17" cy="20" r="1"/></svg>Adicionar ao carrinho</button>`}<button class="product-detail__share" type="button" data-share-product="${escapeHtml(product.id)}">↗ Compartilhar</button></div>
         <div class="product-detail__shipping"><p>Calcule a entrega para a sua região.</p>${productShippingPanel(product, quoteState, "detail")}</div>
       </div>
     </div>`;
@@ -207,6 +210,9 @@ function productUrl(id = "") {
 
 function productIdFromUrl() {
   return new URL(window.location.href).searchParams.get("produto") || "";
+}
+function categoryIdFromUrl() {
+  return new URL(window.location.href).searchParams.get("categoria") || "";
 }
 
 function openProductDialog(id, { updateUrl = true } = {}) {
@@ -276,18 +282,6 @@ function renderCategories(catalog) {
   document.querySelector("#category-grid").innerHTML = all.map((category) => `<button class="category-card ${(state.showNew && category.id === "new") || state.categoryId === category.id ? "is-active" : ""}" type="button" data-category="${escapeHtml(category.id)}" role="listitem"><span class="category-icon">${escapeHtml(category.icon)}</span><span>${escapeHtml(category.name)}</span></button>`).join("");
 }
 
-function renderHero(catalog) {
-  const hero = catalog.products.find((product) => product.isHero && product.visible);
-  const image = document.querySelector("#campaign-collection-image");
-  if (hero?.photos?.[0]) {
-    image.src = hero.photos[0];
-    image.alt = `Foto de destaque do produto ${hero.title}.`;
-  } else {
-    image.src = "./assets/presepio-sagrada-familia.webp";
-    image.alt = "Presépio Sagrada Família impresso em 3D em uma base de madeira.";
-  }
-}
-
 function renderCampaign(index, announce = false) {
   if (!campaignTrack || !campaignSlides.length) return;
   activeCampaignIndex = (index + campaignSlides.length) % campaignSlides.length;
@@ -342,6 +336,28 @@ function selectCampaign(index) {
   startCampaignAutoplay();
 }
 
+function campaignAction(campaign) {
+  const label = escapeHtml(campaign.ctaLabel || "Conhecer a coleção");
+  if (campaign.ctaTargetType === "category") return `<a class="button button-primary" href="?categoria=${encodeURIComponent(campaign.ctaTarget)}#produtos" data-campaign-category="${escapeHtml(campaign.ctaTarget)}">${label} <span>→</span></a>`;
+  if (campaign.ctaTargetType === "product") return `<button class="button button-primary" type="button" data-view-product="${escapeHtml(campaign.ctaTarget)}">${label} <span>→</span></button>`;
+  if (campaign.ctaTargetType === "url") return `<a class="button button-primary" href="${escapeHtml(campaign.ctaTarget)}" target="_blank" rel="noreferrer">${label} <span>↗</span></a>`;
+  return `<a class="button button-primary" href="#produtos">${label} <span>→</span></a>`;
+}
+
+function renderRemoteCampaigns(campaigns) {
+  if (!campaigns.length || !campaignTrack) return;
+  stopCampaignAutoplay();
+  campaignTrack.innerHTML = campaigns.map((campaign, index) => `<article class="campaign-slide ${index === 0 ? "is-active" : ""}" data-campaign-slide aria-hidden="${index === 0 ? "false" : "true"}" ${index === 0 ? "" : "inert"}><div class="hero-copy"><p class="eyebrow"><span></span> ${escapeHtml(campaign.eyebrow)}</p>${index === 0 ? `<h1>${escapeHtml(campaign.title)}</h1>` : `<h2 class="campaign-title">${escapeHtml(campaign.title)}</h2>`}<p class="hero-text">${escapeHtml(campaign.description)}</p><div class="hero-actions">${campaignAction(campaign)}<a class="text-link" href="#processo">Como são feitas <span>↗</span></a></div></div><div class="hero-visual"><img src="${escapeHtml(campaign.imageUrl)}" alt="${escapeHtml(campaign.name)}" ${index === 0 ? "fetchpriority=\"high\"" : "loading=\"lazy\""} /><div class="hero-stamp" aria-hidden="true"><span>feito<br />com<br />luz</span></div></div></article>`).join("");
+  const pagination = document.querySelector(".carousel-pagination");
+  if (pagination) pagination.innerHTML = campaigns.map((campaign, index) => `<button class="carousel-dot ${index === 0 ? "is-active" : ""}" type="button" data-carousel-index="${index}" aria-label="Ver campanha ${index + 1}: ${escapeHtml(campaign.name)}" ${index === 0 ? "aria-current=\"true\"" : ""}></button>`).join("");
+  campaignSlides = [...document.querySelectorAll("[data-campaign-slide]")];
+  campaignDots = [...document.querySelectorAll("[data-carousel-index]")];
+  campaignNames = campaigns.map((campaign) => campaign.name);
+  activeCampaignIndex = 0;
+  renderCampaign(0);
+  startCampaignAutoplay();
+}
+
 document.querySelector("[data-carousel-previous]")?.addEventListener("click", (event) => {
   event.stopPropagation();
   moveCampaign(-1);
@@ -375,7 +391,6 @@ function renderAll() {
   const catalog = catalogStore.load();
   renderNavigation(catalog);
   renderCategories(catalog);
-  renderHero(catalog);
   renderProducts(catalog);
   updateCounts();
 }
@@ -878,3 +893,18 @@ renderCampaign(0);
 startCampaignAutoplay();
 const sharedProductId = productIdFromUrl();
 if (sharedProductId) openProductDialog(sharedProductId, { updateUrl: false });
+
+async function hydrateStorefront() {
+  const catalog = await catalogStore.hydrate();
+  const sharedCategoryId = categoryIdFromUrl();
+  if (sharedCategoryId && catalog.categories.some((category) => category.id === sharedCategoryId && category.visible)) {
+    state.categoryId = sharedCategoryId;
+    state.showNew = false;
+    state.favoritesMode = false;
+  }
+  renderAll();
+  const campaigns = await catalogStore.loadCampaigns();
+  renderRemoteCampaigns(campaigns);
+}
+
+hydrateStorefront();
