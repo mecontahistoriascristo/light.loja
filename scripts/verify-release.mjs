@@ -45,6 +45,8 @@ const checks = [
   ["Checkout cria somente pedidos pendentes, sem pagamento ou cartão", source.storefrontApp.includes("createPendingOrder") && source.storefrontApp.includes("pending_payment") === false && source.storefront.includes("aguardando pagamento") && !source.storefront.includes("type=\"credit-card\"")],
   ["Admin lista e cancela apenas pedidos aguardando pagamento", source.admin.includes("admin-orders") && source.adminApp.includes("light_orders") && source.adminApp.includes("cancel_pending_light_order")],
   ["Admin trata pedidos expirados e dados pessoais removidos", source.admin.includes('value="expired"') && source.adminApp.includes('status === "expired"') && source.adminApp.includes("personal_data_deleted_at")],
+  ["Vitrine apresenta destaques, categorias e catálogo completo na ordem de descoberta", source.storefront.indexOf('id="escolhas"') < source.storefront.indexOf('class="category-section') && source.storefront.indexOf('class="category-section') < source.storefront.indexOf('id="produtos"') && source.storefront.includes('id="featured-product-grid"')],
+  ["Catálogo acrescenta produtos na rolagem, com controle acessível e imagens adiadas", source.storefrontApp.includes("IntersectionObserver") && source.storefrontApp.includes("loadNextProductBatch") && source.storefront.includes('id="load-more-products"') && source.storefrontApp.includes('loading="lazy" decoding="async"')],
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

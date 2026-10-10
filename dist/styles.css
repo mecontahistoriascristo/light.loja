@@ -14,6 +14,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { scroll-behavior: smooth; }
 body { margin: 0; color: var(--ink); background: var(--paper); font-family: var(--sans); font-size: 15px; line-height: 1.5; }
 button, input { font: inherit; }
@@ -112,7 +113,9 @@ h1 em, h2 em { font-family: var(--serif); font-weight: 500; }
 .benefits p:last-child { border-right: 0; }
 .benefits span { margin-right: 5px; color: var(--gold-deep); font-size: 17px; vertical-align: -2px; }
 
-.category-section { padding-block: 94px; }
+.featured-section { padding-block: 68px 30px; }
+.featured-section .product-grid { margin-top: 29px; }
+.category-section { padding-block: 58px 68px; }
 .centered { text-align: center; }
 .centered .eyebrow { justify-content: center; }
 .category-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-top: 41px; }
@@ -126,11 +129,17 @@ h1 em, h2 em { font-family: var(--serif); font-weight: 500; }
 .category-icon.cube { font-family: var(--sans); font-size: 51px; }
 
 .products-section { padding-block: 37px 107px; scroll-margin-top: 135px; }
+.catalog-section { padding-top: 28px; }
 .split-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; }
 .split-heading .eyebrow { margin-bottom: 11px; }
 .split-heading h2 { margin-bottom: 0; }
 .search-feedback { min-height: 22px; margin: 22px 0 0; color: var(--muted); font-size: 12px; }
 .product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+.product-list-footer { display: grid; justify-items: center; gap: 12px; margin-top: 35px; }
+.product-list-footer p { min-height: 18px; margin: 0; color: var(--muted); font-size: 11px; text-align: center; }
+.product-list-footer .button { min-width: 190px; }
+.product-list-footer .button:focus-visible { outline: 3px solid var(--gold-deep); outline-offset: 4px; }
+#product-load-sentinel { height: 1px; scroll-margin-top: 135px; }
 .product-card { position: relative; min-width: 0; transition: transform .28s cubic-bezier(.22,.8,.25,1), filter .28s ease; }
 .product-media { position: relative; aspect-ratio: .9; overflow: hidden; border-radius: 4px 24px 4px 24px; background: var(--sand); }
 .product-media-open { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: pointer; }
@@ -415,14 +424,18 @@ h1 em, h2 em { font-family: var(--serif); font-weight: 500; }
   .benefits-grid { grid-template-columns: repeat(2, 1fr); padding-block: 7px; }
   .benefits p:nth-child(2) { border-right: 0; }
   .benefits p { text-align: left; font-size: 9px; }
-  .category-section { padding-block: 63px; }
+  .featured-section { padding-block: 52px 22px; }
+  .category-section { padding-block: 45px 49px; }
   .category-grid { grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 29px; }
   .category-card { min-height: 120px; border-radius: 3px 23px 3px 23px; font-size: 10px; }
   .category-icon { font-size: 31px; }
   .category-icon.arch, .category-icon.book, .category-icon.gift { font-size: 34px; }
   .category-icon.cube { font-size: 39px; }
   .products-section { padding-bottom: 70px; }
+  .catalog-section { padding-top: 20px; }
   .product-grid { grid-template-columns: repeat(2, 1fr); gap: 18px 12px; }
+  .product-list-footer { margin-top: 27px; }
+  .product-list-footer .button { width: min(100%, 300px); }
   .product-dialog { width: min(680px, calc(100vw - 24px)); max-height: calc(100vh - 24px); }
   .product-dialog__panel { max-height: calc(100vh - 24px); padding: 46px 24px 28px; }
   .product-detail { grid-template-columns: 1fr; gap: 22px; }

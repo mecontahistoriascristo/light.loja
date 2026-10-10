@@ -4,7 +4,13 @@ import { createPendingOrder } from "./supabase-client.js?v=20261010-orders-reten
 const state = { cart: [], favorites: new Set(), query: "", categoryId: "", showNew: false, favoritesMode: false };
 const CART_STORAGE_KEY = "light-loja-cart-v1";
 const FAVORITES_STORAGE_KEY = "light-loja-favorites-v1";
+const PRODUCT_BATCH_SIZE = 8;
 const grid = document.querySelector("#product-grid");
+const featuredGrid = document.querySelector("#featured-product-grid");
+const featuredSection = document.querySelector("#escolhas");
+const productLoadSentinel = document.querySelector("#product-load-sentinel");
+const loadMoreProductsButton = document.querySelector("#load-more-products");
+const productListStatus = document.querySelector("#product-list-status");
 const searchInput = document.querySelector("#site-search");
 const feedback = document.querySelector(".search-feedback");
 const resetFilter = document.querySelector(".reset-filter");
@@ -46,6 +52,8 @@ let toastTimer;
 let activeCampaignIndex = 0;
 let campaignAutoplayTimer;
 let campaignPointerStart;
+let productLimit = PRODUCT_BATCH_SIZE;
+let productLoadObserver;
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
 const formatPrice = (value) => Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -126,11 +134,11 @@ function showToast(message) {
 }
 
 function productMedia(product) {
-  if (product.photos?.[0]) return `<img class="product-uploaded-image" src="${escapeHtml(product.photos[0])}" alt="Foto de ${escapeHtml(product.title)}" />`;
+  if (product.photos?.[0]) return `<img class="product-uploaded-image" src="${escapeHtml(product.photos[0])}" alt="Foto de ${escapeHtml(product.title)}" loading="lazy" decoding="async" />`;
   return `<div class="product-art ${escapeHtml(product.art)}"><div class="object"></div></div>`;
 }
 
-function productCard(product, catalog) {
+function productCard(product, catalog, { featured = false } = {}) {
   const isFavorite = state.favorites.has(product.id);
   const category = categoryFor(catalog, product.categoryId);
   const productShipping = productShippingState.get(product.id);
@@ -152,8 +160,7 @@ function productCard(product, catalog) {
         <div class="product-bottom">${productPrice(product)}<button class="add-button" type="button" ${soldOut ? "disabled" : `data-add="${escapeHtml(product.id)}"`} aria-label="${soldOut ? `${escapeHtml(product.title)} indisponível` : `Adicionar ${escapeHtml(product.title)} ao carrinho`}" title="${soldOut ? "Indisponível" : "Adicionar ao carrinho"}">${soldOut ? "—" : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 4.5h2l1.7 10.1a2 2 0 0 0 1.9-1.5L20.4 8H7"/><circle cx="9.5" cy="20" r="1"/><circle cx="17" cy="20" r="1"/></svg>`}</button></div>
         <p class="product-production-time">${escapeHtml(product.productionTime)}</p>
         ${stockNotice(product)}
-        <button class="product-shipping-toggle" type="button" data-toggle-product-shipping="${escapeHtml(product.id)}" aria-expanded="${Boolean(productShipping?.open)}">Calcular frete</button>
-        ${productShipping?.open ? productShippingPanel(product, productShipping) : ""}
+        ${featured ? "" : `<button class="product-shipping-toggle" type="button" data-toggle-product-shipping="${escapeHtml(product.id)}" aria-expanded="${Boolean(productShipping?.open)}">Calcular frete</button>${productShipping?.open ? productShippingPanel(product, productShipping) : ""}`}
       </div>
     </article>`;
 }
@@ -382,22 +389,55 @@ campaignDots.forEach((dot) => {
   });
 });
 
+function renderFeaturedProducts(catalog) {
+  const featured = catalog.products
+    .filter((product) => product.visible && product.featuredRank > 0)
+    .sort((first, second) => first.featuredRank - second.featuredRank || first.title.localeCompare(second.title, "pt-BR"))
+    .slice(0, 4);
+  featuredSection.hidden = featured.length === 0;
+  featuredGrid.innerHTML = featured.map((product) => productCard(product, catalog, { featured: true })).join("");
+}
+
+function loadNextProductBatch() {
+  const catalog = catalogStore.load();
+  const total = filteredProducts(catalog).length;
+  if (productLimit >= total) return;
+  productLimit = Math.min(total, productLimit + PRODUCT_BATCH_SIZE);
+  renderProducts(catalog);
+}
+
 function renderProducts(catalog) {
   const result = filteredProducts(catalog);
-  grid.innerHTML = result.length ? result.map((product) => productCard(product, catalog)).join("") : `<div class="empty-results"><strong>Nenhuma peça encontrada.</strong><br />Tente outra busca ou publique um novo produto no catálogo.</div>`;
+  const visibleProducts = result.slice(0, productLimit);
+  const hasMore = visibleProducts.length < result.length;
+  grid.innerHTML = visibleProducts.length ? visibleProducts.map((product) => productCard(product, catalog)).join("") : `<div class="empty-results"><strong>Nenhuma peça encontrada.</strong><br />Tente outra busca, categoria ou limpe os filtros.</div>`;
   let context = "";
   if (state.favoritesMode) context = "nos seus favoritos";
   else if (state.showNew) context = "em novidades";
   else if (state.categoryId) context = `em ${categoryFor(catalog, state.categoryId)?.name || "sua categoria"}`;
   else if (state.query) context = `para “${state.query}”`;
-  feedback.textContent = context ? `${result.length} peça${result.length === 1 ? "" : "s"} encontrada${result.length === 1 ? "" : "s"} ${context}.` : "Coleção de Natal da Light.";
+  feedback.textContent = context ? `${result.length} peça${result.length === 1 ? "" : "s"} encontrada${result.length === 1 ? "" : "s"} ${context}.` : `${result.length} peça${result.length === 1 ? "" : "s"} na coleção.`;
   resetFilter.hidden = !state.categoryId && !state.query && !state.showNew && !state.favoritesMode;
+  loadMoreProductsButton.hidden = !hasMore;
+  productListStatus.textContent = hasMore
+    ? `Mostrando ${visibleProducts.length} de ${result.length} peças.`
+    : result.length ? `Você está vendo ${result.length === 1 ? "a peça disponível" : "todas as peças"}.` : "";
+
+  productLoadObserver?.disconnect();
+  if (hasMore && "IntersectionObserver" in window) {
+    productLoadObserver = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) loadNextProductBatch();
+    }, { rootMargin: "720px 0px" });
+    productLoadObserver.observe(productLoadSentinel);
+  }
 }
 
 function renderAll() {
   const catalog = catalogStore.load();
+  productLimit = PRODUCT_BATCH_SIZE;
   renderNavigation(catalog);
   renderCategories(catalog);
+  renderFeaturedProducts(catalog);
   renderProducts(catalog);
   updateCounts();
 }
@@ -721,6 +761,7 @@ document.addEventListener("click", (event) => {
   const favorite = event.target.closest("[data-favorite]");
   const category = event.target.closest("[data-category]");
   const remove = event.target.closest("[data-remove]");
+  const loadMore = event.target.closest("#load-more-products");
   const selectedShipping = event.target.closest("[data-select-shipping]");
   const increase = event.target.closest("[data-increase]");
   const decrease = event.target.closest("[data-decrease]");
@@ -745,6 +786,7 @@ document.addEventListener("click", (event) => {
   if (campaignDot) { selectCampaign(Number(campaignDot.dataset.carouselIndex)); return; }
   if (campaignCategory) { event.preventDefault(); setCategory(campaignCategory.dataset.campaignCategory); return; }
   if (productShippingToggle) { toggleProductShipping(productShippingToggle.dataset.toggleProductShipping); return; }
+  if (loadMore) { loadNextProductBatch(); return; }
   if (increase) { changeCartQuantity(increase.dataset.increase, 1); return; }
   if (decrease) { changeCartQuantity(decrease.dataset.decrease, -1); return; }
   if (add) addToCart(add.dataset.add);
