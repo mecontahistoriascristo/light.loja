@@ -138,10 +138,9 @@ function productMedia(product) {
   return `<div class="product-art ${escapeHtml(product.art)}"><div class="object"></div></div>`;
 }
 
-function productCard(product, catalog, { featured = false } = {}) {
+function productCard(product, catalog) {
   const isFavorite = state.favorites.has(product.id);
   const category = categoryFor(catalog, product.categoryId);
-  const productShipping = productShippingState.get(product.id);
   const soldOut = isSoldOut(product);
   return `
     <article class="product-card">
@@ -158,9 +157,7 @@ function productCard(product, catalog, { featured = false } = {}) {
         <p class="product-category">${escapeHtml(category?.name || "Coleção Light")}</p>
         <h3 class="product-title"><button type="button" data-view-product="${escapeHtml(product.id)}">${escapeHtml(product.title)}</button></h3>
         <div class="product-bottom">${productPrice(product)}<button class="add-button" type="button" ${soldOut ? "disabled" : `data-add="${escapeHtml(product.id)}"`} aria-label="${soldOut ? `${escapeHtml(product.title)} indisponível` : `Adicionar ${escapeHtml(product.title)} ao carrinho`}" title="${soldOut ? "Indisponível" : "Adicionar ao carrinho"}">${soldOut ? "—" : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 4.5h2l1.7 10.1a2 2 0 0 0 1.9-1.5L20.4 8H7"/><circle cx="9.5" cy="20" r="1"/><circle cx="17" cy="20" r="1"/></svg>`}</button></div>
-        <p class="product-production-time">${escapeHtml(product.productionTime)}</p>
         ${stockNotice(product)}
-        ${featured ? "" : `<button class="product-shipping-toggle" type="button" data-toggle-product-shipping="${escapeHtml(product.id)}" aria-expanded="${Boolean(productShipping?.open)}">Calcular frete</button>${productShipping?.open ? productShippingPanel(product, productShipping) : ""}`}
       </div>
     </article>`;
 }
@@ -361,7 +358,7 @@ function campaignAction(campaign) {
 function renderRemoteCampaigns(campaigns) {
   if (!campaigns.length || !campaignTrack) return;
   stopCampaignAutoplay();
-  campaignTrack.innerHTML = campaigns.map((campaign, index) => `<article class="campaign-slide ${index === 0 ? "is-active" : ""}" data-campaign-slide aria-hidden="${index === 0 ? "false" : "true"}" ${index === 0 ? "" : "inert"}><div class="hero-copy"><p class="eyebrow"><span></span> ${escapeHtml(campaign.eyebrow)}</p>${index === 0 ? `<h1>${escapeHtml(campaign.title)}</h1>` : `<h2 class="campaign-title">${escapeHtml(campaign.title)}</h2>`}<p class="hero-text">${escapeHtml(campaign.description)}</p><div class="hero-actions">${campaignAction(campaign)}<a class="text-link" href="#processo">Como são feitas <span>↗</span></a></div></div><div class="hero-visual"><img src="${escapeHtml(campaign.imageUrl)}" alt="${escapeHtml(campaign.name)}" ${index === 0 ? "fetchpriority=\"high\"" : "loading=\"lazy\""} /><div class="hero-stamp" aria-hidden="true"><span>feito<br />com<br />luz</span></div></div></article>`).join("");
+  campaignTrack.innerHTML = campaigns.map((campaign, index) => `<article class="campaign-slide ${index === 0 ? "is-active" : ""}" data-campaign-slide aria-hidden="${index === 0 ? "false" : "true"}" ${index === 0 ? "" : "inert"}><div class="hero-copy"><p class="eyebrow"><span></span> ${escapeHtml(campaign.eyebrow)}</p>${index === 0 ? `<h1>${escapeHtml(campaign.title)}</h1>` : `<h2 class="campaign-title">${escapeHtml(campaign.title)}</h2>`}<p class="hero-text">${escapeHtml(campaign.description)}</p><div class="hero-actions">${campaignAction(campaign)}<a class="text-link" href="#processo">Como são feitas <span>↗</span></a></div></div><div class="hero-visual"><img src="${escapeHtml(campaign.imageUrl)}" alt="${escapeHtml(campaign.name)}" ${index === 0 ? "fetchpriority=\"high\"" : "loading=\"lazy\""} /></div></article>`).join("");
   const pagination = document.querySelector(".carousel-pagination");
   if (pagination) pagination.innerHTML = campaigns.map((campaign, index) => `<button class="carousel-dot ${index === 0 ? "is-active" : ""}" type="button" data-carousel-index="${index}" aria-label="Ver campanha ${index + 1}: ${escapeHtml(campaign.name)}" ${index === 0 ? "aria-current=\"true\"" : ""}></button>`).join("");
   campaignSlides = [...document.querySelectorAll("[data-campaign-slide]")];
@@ -395,7 +392,7 @@ function renderFeaturedProducts(catalog) {
     .sort((first, second) => first.featuredRank - second.featuredRank || first.title.localeCompare(second.title, "pt-BR"))
     .slice(0, 4);
   featuredSection.hidden = featured.length === 0;
-  featuredGrid.innerHTML = featured.map((product) => productCard(product, catalog, { featured: true })).join("");
+  featuredGrid.innerHTML = featured.map((product) => productCard(product, catalog)).join("");
 }
 
 function loadNextProductBatch() {
@@ -695,15 +692,8 @@ async function requestShippingQuote() {
 }
 
 function productShippingEntry(id) {
-  if (!productShippingState.has(id)) productShippingState.set(id, { open: false, postalCode: "", quotes: [], message: "", loading: false });
+  if (!productShippingState.has(id)) productShippingState.set(id, { postalCode: "", quotes: [], message: "", loading: false });
   return productShippingState.get(id);
-}
-
-function toggleProductShipping(id) {
-  const entry = productShippingEntry(id);
-  entry.open = !entry.open;
-  renderProducts(catalogStore.load());
-  if (entry.open) window.setTimeout(() => document.querySelector(`#product-shipping-${CSS.escape(id)}`)?.focus(), 0);
 }
 
 function renderProductViews(id) {
@@ -765,7 +755,6 @@ document.addEventListener("click", (event) => {
   const selectedShipping = event.target.closest("[data-select-shipping]");
   const increase = event.target.closest("[data-increase]");
   const decrease = event.target.closest("[data-decrease]");
-  const productShippingToggle = event.target.closest("[data-toggle-product-shipping]");
   const viewProduct = event.target.closest("[data-view-product]");
   const detailPhoto = event.target.closest("[data-detail-photo]");
   const detailAdd = event.target.closest("[data-detail-add]");
@@ -785,7 +774,6 @@ document.addEventListener("click", (event) => {
   if (nextCampaign) { moveCampaign(1); return; }
   if (campaignDot) { selectCampaign(Number(campaignDot.dataset.carouselIndex)); return; }
   if (campaignCategory) { event.preventDefault(); setCategory(campaignCategory.dataset.campaignCategory); return; }
-  if (productShippingToggle) { toggleProductShipping(productShippingToggle.dataset.toggleProductShipping); return; }
   if (loadMore) { loadNextProductBatch(); return; }
   if (increase) { changeCartQuantity(increase.dataset.increase, 1); return; }
   if (decrease) { changeCartQuantity(decrease.dataset.decrease, -1); return; }
