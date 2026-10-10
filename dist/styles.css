@@ -107,12 +107,6 @@ h1 em, h2 em { font-family: var(--serif); font-weight: 500; }
 .carousel-progress { width: min(150px, 16vw); height: 1px; overflow: hidden; margin-left: 2px; background: var(--line); }
 .carousel-progress span { display: block; width: 25%; height: 100%; background: var(--gold-deep); transition: transform .6s cubic-bezier(.22,.8,.25,1); }
 
-.benefits { border-block: 1px solid var(--line); background: var(--sand); }
-.benefits-grid { min-height: 60px; display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; }
-.benefits p { margin: 0; padding: 6px 14px; border-right: 1px solid var(--line); text-align: center; font-size: 10px; font-weight: 500; }
-.benefits p:last-child { border-right: 0; }
-.benefits span { margin-right: 5px; color: var(--gold-deep); font-size: 17px; vertical-align: -2px; }
-
 .featured-section { padding-block: 68px 30px; }
 .featured-section .product-grid { margin-top: 29px; }
 .category-section { padding-block: 58px 68px; }
@@ -421,9 +415,6 @@ h1 em, h2 em { font-family: var(--serif); font-weight: 500; }
   .hero-copy { order: 1; }
   .hero-visual { order: 2; min-height: 375px; border-radius: 4px 43px 4px 43px; }
   .campaign-carousel__controls { width: calc(100% - 96px); margin: -24px auto 28px; }
-  .benefits-grid { grid-template-columns: repeat(2, 1fr); padding-block: 7px; }
-  .benefits p:nth-child(2) { border-right: 0; }
-  .benefits p { text-align: left; font-size: 9px; }
   .featured-section { padding-block: 52px 22px; }
   .category-section { padding-block: 45px 49px; }
   .category-grid { grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 29px; }
@@ -470,8 +461,6 @@ h1 em, h2 em { font-family: var(--serif); font-weight: 500; }
   .hero-stamp { width: 59px; height: 59px; right: 12px; bottom: 12px; font-size: 12px; }
   .campaign-carousel__controls { width: calc(100% - 72px); gap: 10px; }
   .carousel-progress { display: none; }
-  .benefits p { padding-left: 0; font-size: 8.5px; }
-  .benefits span { font-size: 13px; }
   .split-heading { align-items: end; }
   .split-heading .text-link { font-size: 10px; }
   .product-title { font-size: 12px; }
